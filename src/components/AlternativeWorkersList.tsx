@@ -3,7 +3,7 @@ import { AllocationCandidate, Job } from '../types';
 import { Star, MapPin, DollarSign, Briefcase, ChevronRight, UserCheck, ShieldAlert } from 'lucide-react';
 
 interface AlternativeWorkersListProps {
-  candidates: AllocationCandidate[];
+  candidates?: AllocationCandidate[];
   job: Job;
   onSelectCandidate?: (candidate: AllocationCandidate) => void;
   onAssignJob?: (workerId: string) => void;
@@ -11,14 +11,14 @@ interface AlternativeWorkersListProps {
 }
 
 export const AlternativeWorkersList: React.FC<AlternativeWorkersListProps> = ({
-  candidates,
+  candidates = [],
   job,
   onSelectCandidate,
   onAssignJob,
   assignedWorkerId
 }) => {
   // Show candidates excluding the top recommendation (candidates.slice(1))
-  const alternatives = candidates.slice(1);
+  const alternatives = (candidates || []).slice(1);
 
   if (alternatives.length === 0) {
     return null;
@@ -163,9 +163,9 @@ export const AlternativeWorkersList: React.FC<AlternativeWorkersListProps> = ({
         </table>
       </div>
 
-      {/* Educational Note for Demonstrator & SIH Judges */}
+      {/* Educational Note on Fair Allocation Principle */}
       <div className="bg-slate-50 px-5 py-3 border-t border-slate-200 text-xs text-slate-600 flex items-start space-x-2">
-        <span className="font-bold text-slate-900 shrink-0">Algorithm Demonstration Note:</span>
+        <span className="font-bold text-slate-900 shrink-0">Fair Opportunity Dispatch Principle:</span>
         <span>
           Even though <strong>Vikram Sharma</strong> is rated 4.9⭐ and is slightly closer (1.2 km vs 2.1 km), he was not selected because he has already earned ₹7,800 with 15 jobs this week. The Fair Work Allocation engine prioritizes <strong>Ravi Kumar</strong> (4.6⭐, ₹2,100 earnings, 4 jobs) to distribute cooperative opportunities fairly while guaranteeing full technical qualification.
         </span>

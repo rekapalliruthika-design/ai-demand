@@ -255,8 +255,8 @@ export const DemandForecastPage: React.FC<DemandForecastPageProps> = ({
                 <p className="text-xs text-slate-300 mt-1 max-w-2xl">
                   Surging service demand with projected workforce deficits identified in{' '}
                   <span className="text-white font-semibold">
-                    {urgentForecasts.length > 0
-                      ? urgentForecasts.slice(0, 3).map(u => `${u.location.split(' - ')[0]} (${u.service})`).join(', ')
+                    {urgentForecasts && urgentForecasts.length > 0
+                      ? urgentForecasts.slice(0, 3).map(u => `${(u.location || '').split(' - ')[0]} (${u.service})`).join(', ')
                       : 'Area A (Plumbing) & Area B (Electrical)'}
                   </span>
                   . Preemptive inter-zone worker mobilization required to avoid service bottlenecks and SLA delays.

@@ -3,24 +3,25 @@ import { DemandForecast } from '../types';
 import { MapPin, Users, ArrowUpRight, AlertCircle, CheckCircle2, AlertTriangle, Filter } from 'lucide-react';
 
 interface DemandLocationCardProps {
-  forecasts: DemandForecast[];
+  forecasts?: DemandForecast[];
   onSelectArea?: (areaName: string, serviceName: string) => void;
   urgentOnlyDefault?: boolean;
 }
 
 export const DemandLocationCard: React.FC<DemandLocationCardProps> = ({
-  forecasts,
+  forecasts = [],
   onSelectArea,
   urgentOnlyDefault = false
 }) => {
   const [filterUrgentOnly, setFilterUrgentOnly] = useState(urgentOnlyDefault);
 
-  const urgentAlerts = forecasts.filter(f => f.demandLevel === 'Critical' || f.demandLevel === 'High');
-  const criticalCount = forecasts.filter(f => f.demandLevel === 'Critical').length;
-  const highCount = forecasts.filter(f => f.demandLevel === 'High').length;
+  const safeForecasts = forecasts || [];
+  const urgentAlerts = safeForecasts.filter(f => f.demandLevel === 'Critical' || f.demandLevel === 'High');
+  const criticalCount = safeForecasts.filter(f => f.demandLevel === 'Critical').length;
+  const highCount = safeForecasts.filter(f => f.demandLevel === 'High').length;
 
-  const filteredItems = filterUrgentOnly ? urgentAlerts : forecasts;
-  const displayItems = filteredItems.slice(0, 10);
+  const filteredItems = filterUrgentOnly ? urgentAlerts : safeForecasts;
+  const displayItems = (filteredItems || []).slice(0, 10);
 
   const getDemandBadge = (level: string) => {
     switch (level) {

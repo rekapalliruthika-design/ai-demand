@@ -94,7 +94,7 @@ export const InteractiveBookingModal: React.FC<InteractiveBookingModalProps> = (
                   : 'bg-slate-100 text-slate-600 hover:text-slate-900'
               }`}
             >
-              Preset Test Scenarios (Including SIH Demo)
+              Preset Test Scenarios
             </button>
             <button
               onClick={() => setIsCustom(true)}
@@ -117,7 +117,7 @@ export const InteractiveBookingModal: React.FC<InteractiveBookingModalProps> = (
 
               {INITIAL_JOBS.map(job => {
                 const isSelected = selectedJob.id === job.id;
-                const isSIHDemo = job.id === 'job-demo-01';
+                const isShowcaseJob = job.id === 'job-demo-01';
 
                 return (
                   <div
@@ -132,9 +132,9 @@ export const InteractiveBookingModal: React.FC<InteractiveBookingModalProps> = (
                     <div className="flex items-start justify-between gap-2 mb-1">
                       <div className="flex items-center space-x-2">
                         <span className="font-bold text-sm text-slate-900">{job.title}</span>
-                        {isSIHDemo && (
+                        {isShowcaseJob && (
                           <span className="text-2xs font-extrabold px-2 py-0.5 rounded bg-emerald-100 text-emerald-900 border border-emerald-300">
-                            ★ Canonical SIH Demo
+                            ★ Standard Showcase
                           </span>
                         )}
                       </div>

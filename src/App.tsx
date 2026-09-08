@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { Navbar } from './components/Navbar';
+import { WorkflowBanner } from './components/WorkflowBanner';
 import { SIHDemoWalkthrough } from './components/SIHDemoWalkthrough';
 import { DemandForecastPage } from './pages/DemandForecastPage';
 import { WorkAllocationPage } from './pages/WorkAllocationPage';
@@ -43,10 +44,9 @@ export default function App() {
     }).catch(err => console.error('Failed to preload forecast alerts', err));
   }, []);
 
-  const handleRunDemo = () => {
+  const handleOpenGuide = () => {
     setDemoActive(true);
     setDemoStep(1);
-    setActiveTab('demand-forecast');
   };
 
   const handleResetData = () => {
@@ -60,9 +60,9 @@ export default function App() {
       <Navbar
         activeTab={activeTab}
         setActiveTab={setActiveTab}
-        onRunDemoScenario={handleRunDemo}
+        onOpenGuide={handleOpenGuide}
         onResetData={handleResetData}
-        demoActive={demoActive}
+        guideActive={demoActive}
         urgentAlertCount={urgentAlertCount}
         urgentAlerts={urgentAlerts}
       />
@@ -77,6 +77,13 @@ export default function App() {
           onNavigateTab={tab => setActiveTab(tab)}
         />
       )}
+
+      {/* Workflow Navigation & Quick Explanations */}
+      <WorkflowBanner
+        activeTab={activeTab}
+        onSelectTab={tab => setActiveTab(tab)}
+        onOpenGuide={handleOpenGuide}
+      />
 
       {/* Main Content Area */}
       <main className="flex-1 max-w-7xl w-full mx-auto px-4 sm:px-6 lg:px-8 py-6">
@@ -126,7 +133,7 @@ export default function App() {
           <div className="flex items-center space-x-4 text-2xs">
             <span className="flex items-center space-x-1 text-slate-300">
               <ShieldCheck className="w-3.5 h-3.5 text-emerald-400" />
-              <span>SIH 2026 Model Standard</span>
+              <span>Cooperative Fairness Standard</span>
             </span>
             <span className="text-slate-600">|</span>
             <span>Zero Discrimination Protected Attributes</span>

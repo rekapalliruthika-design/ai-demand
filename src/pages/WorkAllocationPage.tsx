@@ -127,7 +127,7 @@ export const WorkAllocationPage: React.FC<WorkAllocationPageProps> = ({
               <h3 className="font-bold text-slate-900 text-base">{currentJob.title}</h3>
               {currentJob.id === 'job-demo-01' && (
                 <span className="text-2xs font-bold px-2 py-0.5 rounded bg-emerald-100 text-emerald-800 border border-emerald-300">
-                  SIH Demo Scenario
+                  Standard Showcase Job
                 </span>
               )}
             </div>
@@ -160,53 +160,65 @@ export const WorkAllocationPage: React.FC<WorkAllocationPageProps> = ({
         </div>
 
         {/* Algorithm Strategy Selector */}
-        <div className="mt-4 pt-3 border-t border-slate-100 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
-          <div className="flex items-center space-x-2 text-xs text-slate-700">
-            <Sliders className="w-4 h-4 text-emerald-600" />
-            <span className="font-semibold">Allocation Strategy Mode:</span>
+        <div className="mt-4 pt-3 border-t border-slate-100 space-y-2">
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+            <div className="flex items-center space-x-2 text-xs text-slate-700">
+              <Sliders className="w-4 h-4 text-emerald-600" />
+              <span className="font-semibold">Allocation Strategy Mode:</span>
+            </div>
+
+            <div className="grid grid-cols-2 sm:flex items-center gap-1.5 bg-slate-100 p-1 rounded-lg border border-slate-200">
+              <button
+                onClick={() => setStrategy('balanced')}
+                className={`px-3 py-1 rounded text-xs font-semibold transition-all cursor-pointer ${
+                  strategy === 'balanced'
+                    ? 'bg-white text-slate-900 shadow-2xs font-bold'
+                    : 'text-slate-600 hover:text-slate-900'
+                }`}
+              >
+                Balanced (Default Fair)
+              </button>
+              <button
+                onClick={() => setStrategy('fairness-priority')}
+                className={`px-3 py-1 rounded text-xs font-semibold transition-all cursor-pointer ${
+                  strategy === 'fairness-priority'
+                    ? 'bg-white text-slate-900 shadow-2xs font-bold'
+                    : 'text-slate-600 hover:text-slate-900'
+                }`}
+              >
+                Fairness Max (35%)
+              </button>
+              <button
+                onClick={() => setStrategy('location-priority')}
+                className={`px-3 py-1 rounded text-xs font-semibold transition-all cursor-pointer ${
+                  strategy === 'location-priority'
+                    ? 'bg-white text-slate-900 shadow-2xs font-bold'
+                    : 'text-slate-600 hover:text-slate-900'
+                }`}
+              >
+                Proximity Priority
+              </button>
+              <button
+                onClick={() => setStrategy('skill-priority')}
+                className={`px-3 py-1 rounded text-xs font-semibold transition-all cursor-pointer ${
+                  strategy === 'skill-priority'
+                    ? 'bg-white text-slate-900 shadow-2xs font-bold'
+                    : 'text-slate-600 hover:text-slate-900'
+                }`}
+              >
+                Skill Priority
+              </button>
+            </div>
           </div>
 
-          <div className="grid grid-cols-2 sm:flex items-center gap-1.5 bg-slate-100 p-1 rounded-lg border border-slate-200">
-            <button
-              onClick={() => setStrategy('balanced')}
-              className={`px-3 py-1 rounded text-xs font-semibold transition-all ${
-                strategy === 'balanced'
-                  ? 'bg-white text-slate-900 shadow-2xs'
-                  : 'text-slate-600 hover:text-slate-900'
-              }`}
-            >
-              Balanced (Default Fair)
-            </button>
-            <button
-              onClick={() => setStrategy('fairness-priority')}
-              className={`px-3 py-1 rounded text-xs font-semibold transition-all ${
-                strategy === 'fairness-priority'
-                  ? 'bg-white text-slate-900 shadow-2xs'
-                  : 'text-slate-600 hover:text-slate-900'
-              }`}
-            >
-              Fairness Max (35%)
-            </button>
-            <button
-              onClick={() => setStrategy('location-priority')}
-              className={`px-3 py-1 rounded text-xs font-semibold transition-all ${
-                strategy === 'location-priority'
-                  ? 'bg-white text-slate-900 shadow-2xs'
-                  : 'text-slate-600 hover:text-slate-900'
-              }`}
-            >
-              Proximity Priority
-            </button>
-            <button
-              onClick={() => setStrategy('skill-priority')}
-              className={`px-3 py-1 rounded text-xs font-semibold transition-all ${
-                strategy === 'skill-priority'
-                  ? 'bg-white text-slate-900 shadow-2xs'
-                  : 'text-slate-600 hover:text-slate-900'
-              }`}
-            >
-              Skill Priority
-            </button>
+          <div className="text-2xs text-slate-500 bg-slate-50 px-3 py-1.5 rounded-lg border border-slate-200/60 flex items-center justify-between">
+            <span>
+              {strategy === 'balanced' && '⚖️ Balanced: 40% Trade Qualification + 30% Distance Proximity + 30% Livelihood Income Equity.'}
+              {strategy === 'fairness-priority' && '🤝 Fairness Max: Prioritizes workers with fewer shifts & lower weekly earnings to raise cooperative floor.'}
+              {strategy === 'location-priority' && '📍 Proximity Priority: Optimizes for shortest transit time and urgent emergency customer arrival.'}
+              {strategy === 'skill-priority' && '⭐ Skill Priority: Optimizes strictly for rating and specialized certification tier.'}
+            </span>
+            <span className="text-emerald-700 font-medium ml-2 shrink-0">Deterministic & Explainable</span>
           </div>
         </div>
       </div>
@@ -220,7 +232,7 @@ export const WorkAllocationPage: React.FC<WorkAllocationPageProps> = ({
             Running eligibility filter, distance calculation, workload scoring, and fairness balancing
           </p>
         </div>
-      ) : allocationResult ? (
+      ) : allocationResult && allocationResult.recommendedWorker ? (
         <div className="space-y-6">
           {/* Top Recommended Worker Card */}
           <WorkerAllocationCard
@@ -232,7 +244,7 @@ export const WorkAllocationPage: React.FC<WorkAllocationPageProps> = ({
 
           {/* Alternative Ranked Workers */}
           <AlternativeWorkersList
-            candidates={allocationResult.allRankedCandidates}
+            candidates={allocationResult.candidates || []}
             job={currentJob}
             onAssignJob={handleAssignJob}
             assignedWorkerId={assignedWorkerId || undefined}

@@ -140,7 +140,7 @@ export class ForecastEngine {
         // Recency weighting: last 3 records get 1.5x weight
         let weightedSum = 0;
         let weightTotal = 0;
-        subset.slice(-3).forEach((rec, idx) => {
+        (subset || []).slice(-3).forEach((rec, idx) => {
           const w = 1 + idx * 0.25;
           weightedSum += rec.requests * w;
           weightTotal += w;

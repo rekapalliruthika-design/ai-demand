@@ -57,7 +57,7 @@ export const SIHDemoWalkthrough: React.FC<SIHDemoWalkthroughProps> = ({
       tab: 'work-allocation' as const,
       description:
         'Look at the "Other Eligible Workers" list. Vikram Sharma has a higher rating (4.9⭐) and is closer (1.2 km vs 2.1 km), BUT he already earned ₹7,800 with 15 jobs this week. The algorithm avoids monopoly!',
-      highlight: 'Crucial SIH evaluation point: Rating-only algorithms perpetuate gig poverty.'
+      highlight: 'Cooperative principle: Rating-only algorithms perpetuate gig poverty.'
     },
     {
       step: 6,
@@ -100,7 +100,7 @@ export const SIHDemoWalkthrough: React.FC<SIHDemoWalkthroughProps> = ({
           <div>
             <div className="flex items-center space-x-2">
               <span className="text-2xs font-extrabold uppercase px-2 py-0.5 rounded bg-emerald-950 text-emerald-300 border border-emerald-700">
-                SIH 2026 Walkthrough
+                Interactive Platform Tour
               </span>
               <h4 className="font-bold text-sm text-white">{current.title}</h4>
             </div>
@@ -116,16 +116,16 @@ export const SIHDemoWalkthrough: React.FC<SIHDemoWalkthroughProps> = ({
           <button
             onClick={handlePrev}
             disabled={currentStep === 1}
-            className="p-1.5 rounded bg-slate-800 hover:bg-slate-700 disabled:opacity-30 disabled:pointer-events-none text-slate-300 text-xs"
+            className="p-1.5 rounded bg-slate-800 hover:bg-slate-700 disabled:opacity-30 disabled:pointer-events-none text-slate-300 text-xs cursor-pointer"
           >
             <ArrowLeft className="w-4 h-4" />
           </button>
 
           <button
             onClick={handleNext}
-            className="px-3 py-1.5 rounded-lg text-xs font-bold bg-emerald-500 hover:bg-emerald-400 text-slate-950 flex items-center space-x-1 transition-all"
+            className="px-3 py-1.5 rounded-lg text-xs font-bold bg-emerald-500 hover:bg-emerald-400 text-slate-950 flex items-center space-x-1 transition-all cursor-pointer"
           >
-            <span>{currentStep === steps.length ? 'Finish Demo' : 'Next Step'}</span>
+            <span>{currentStep === steps.length ? 'Finish Tour' : 'Next Step'}</span>
             <ArrowRight className="w-3.5 h-3.5" />
           </button>
 

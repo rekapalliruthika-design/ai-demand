@@ -1,5 +1,5 @@
 import React, { useState, useRef, useEffect } from 'react';
-import { TrendingUp, Scale, Users, Shield, Play, RotateCcw, Briefcase, Bell, AlertTriangle, ChevronRight, X } from 'lucide-react';
+import { TrendingUp, Scale, Users, Shield, RotateCcw, Briefcase, Bell, AlertTriangle, ChevronRight, X, HelpCircle, Sparkles } from 'lucide-react';
 
 interface UrgentAlertItem {
   location: string;
@@ -12,9 +12,9 @@ interface UrgentAlertItem {
 interface NavbarProps {
   activeTab: 'demand-forecast' | 'work-allocation' | 'fairness-analytics' | 'workers';
   setActiveTab: (tab: 'demand-forecast' | 'work-allocation' | 'fairness-analytics' | 'workers') => void;
-  onRunDemoScenario: () => void;
+  onOpenGuide?: () => void;
   onResetData: () => void;
-  demoActive: boolean;
+  guideActive?: boolean;
   urgentAlertCount?: number;
   urgentAlerts?: UrgentAlertItem[];
 }
@@ -22,9 +22,9 @@ interface NavbarProps {
 export const Navbar: React.FC<NavbarProps> = ({
   activeTab,
   setActiveTab,
-  onRunDemoScenario,
+  onOpenGuide,
   onResetData,
-  demoActive,
+  guideActive = false,
   urgentAlertCount = 0,
   urgentAlerts = []
 }) => {
@@ -54,8 +54,8 @@ export const Navbar: React.FC<NavbarProps> = ({
             <div>
               <div className="flex items-center space-x-2">
                 <span className="font-bold text-lg tracking-tight text-white">SahakarGig</span>
-                <span className="text-xs font-semibold px-2 py-0.5 rounded bg-emerald-950 text-emerald-300 border border-emerald-800">
-                  SIH 2026
+                <span className="text-2xs font-semibold px-2 py-0.5 rounded bg-emerald-950/80 text-emerald-300 border border-emerald-800/80">
+                  Cooperative Platform
                 </span>
               </div>
               <p className="text-xs text-slate-400 hidden sm:block">
@@ -120,7 +120,7 @@ export const Navbar: React.FC<NavbarProps> = ({
             </button>
           </nav>
 
-          {/* Quick SIH Demo Action & Alerts Notification Badge */}
+          {/* Alerts Notification Badge & Platform Tour Action */}
           <div className="flex items-center space-x-2.5">
             {/* Urgent Workforce Notification Bell */}
             <div className="relative" ref={dropdownRef}>
@@ -227,18 +227,20 @@ export const Navbar: React.FC<NavbarProps> = ({
               )}
             </div>
 
-            <button
-              onClick={onRunDemoScenario}
-              className={`px-3 py-1.5 rounded-md text-xs font-semibold flex items-center space-x-1.5 transition-all shadow-sm ${
-                demoActive
-                  ? 'bg-emerald-500 text-slate-950 font-bold ring-2 ring-emerald-300'
-                  : 'bg-emerald-600 hover:bg-emerald-500 text-white'
-              }`}
-              title="Loads the canonical SIH demonstration scenario: Emergency Plumbing in Area A"
-            >
-              <Play className="w-3.5 h-3.5 fill-current" />
-              <span>Run SIH Demo</span>
-            </button>
+            {onOpenGuide && (
+              <button
+                onClick={onOpenGuide}
+                className={`px-3 py-1.5 rounded-md text-xs font-semibold flex items-center space-x-1.5 transition-all shadow-xs cursor-pointer ${
+                  guideActive
+                    ? 'bg-emerald-500 text-slate-950 font-bold ring-2 ring-emerald-300'
+                    : 'bg-slate-800 hover:bg-slate-700 text-slate-200 border border-slate-700'
+                }`}
+                title="Interactive walkthrough explaining the cooperative platform workflow"
+              >
+                <HelpCircle className="w-3.5 h-3.5 text-emerald-400" />
+                <span className="hidden sm:inline">Platform Guide</span>
+              </button>
+            )}
 
             <button
               onClick={onResetData}

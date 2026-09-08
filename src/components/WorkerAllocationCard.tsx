@@ -61,7 +61,7 @@ export const WorkerAllocationCard: React.FC<WorkerAllocationCardProps> = ({
                 </span>
               </div>
               <p className="text-xs text-slate-600 font-medium">
-                {worker.skills.slice(0, 3).join(' • ')}
+                {(worker.skills || []).slice(0, 3).join(' • ')}
               </p>
               <p className="text-xs text-slate-400 mt-0.5">
                 {worker.serviceArea} • Member since {worker.joinedDate.split('-')[0]}
