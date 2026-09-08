@@ -1,13 +1,14 @@
 import React, { useState, useEffect, useMemo } from 'react';
 import { demandForecastService } from '../services/demandForecastService';
+import { dataStorage } from '../services/dataStorage';
 import { ForecastSummaryKPIs, DemandForecast, WorkforceRecommendation as WorkforceRecType, DailyForecastPoint } from '../types';
 import { SERVICE_CATEGORIES, COOPERATIVE_AREAS } from '../data/demandHistory';
-import { MOCK_WORKERS } from '../data/workerData';
 import { generateAIInsights } from '../ai/demandForecast/demandAnalyzer';
 import { DemandForecastChart } from '../components/DemandForecastChart';
 import { DemandLocationCard } from '../components/DemandLocationCard';
 import { WorkforceRecommendation } from '../components/WorkforceRecommendation';
 import { AIInsightCard } from '../components/AIInsightCard';
+import { ManageDemandDataModal } from '../components/ManageDemandDataModal';
 import {
   TrendingUp,
   MapPin,
@@ -21,7 +22,8 @@ import {
   Sparkles,
   ArrowRight,
   AlertTriangle,
-  Bell
+  Bell,
+  Database
 } from 'lucide-react';
 
 interface DemandForecastPageProps {
@@ -37,6 +39,7 @@ export const DemandForecastPage: React.FC<DemandForecastPageProps> = ({
   const [selectedService, setSelectedService] = useState<string>('All');
   const [selectedLocation, setSelectedLocation] = useState<string>('All');
   const [loading, setLoading] = useState(false);
+  const [isManageDataOpen, setIsManageDataOpen] = useState(false);
 
   // Data state
   const [kpis, setKpis] = useState<ForecastSummaryKPIs>({
@@ -95,9 +98,9 @@ export const DemandForecastPage: React.FC<DemandForecastPageProps> = ({
     loadForecast();
   }, [horizonDays, selectedService, selectedLocation]);
 
-  // Generate dynamic AI insights
+  // Generate dynamic AI insights from live worker pool
   const aiInsights = useMemo(() => {
-    return generateAIInsights(areaForecasts, MOCK_WORKERS);
+    return generateAIInsights(areaForecasts, dataStorage.getWorkers());
   }, [areaForecasts]);
 
   const handleActionTriggered = (rec: WorkforceRecType) => {
@@ -106,6 +109,8 @@ export const DemandForecastPage: React.FC<DemandForecastPageProps> = ({
     );
     setTimeout(() => setNoticeAlert(null), 5000);
   };
+
+  const demandHistoryCount = dataStorage.getDemandHistory().length;
 
   return (
     <div className="space-y-6 pb-12">
@@ -145,16 +150,27 @@ export const DemandForecastPage: React.FC<DemandForecastPageProps> = ({
             </p>
           </div>
 
-          {/* Quick link to dispatch */}
-          {onNavigateToDispatch && (
+          {/* Quick links & Live Data Management */}
+          <div className="flex flex-wrap items-center gap-2 self-start lg:self-auto">
             <button
-              onClick={onNavigateToDispatch}
-              className="inline-flex items-center space-x-1.5 text-xs font-bold text-emerald-700 bg-emerald-50 hover:bg-emerald-100 px-3.5 py-2 rounded-lg border border-emerald-200 transition-colors self-start lg:self-auto"
+              onClick={() => setIsManageDataOpen(true)}
+              className="inline-flex items-center space-x-1.5 text-xs font-bold text-slate-700 bg-slate-100 hover:bg-slate-200 px-3.5 py-2 rounded-lg border border-slate-300 transition-colors cursor-pointer"
+              title="Manage live demand dataset, import CSV, or log new service requests"
             >
-              <span>Go to Fair Work Allocation</span>
-              <ArrowRight className="w-3.5 h-3.5" />
+              <Database className="w-3.5 h-3.5 text-emerald-700" />
+              <span>Manage Live Data ({demandHistoryCount})</span>
             </button>
-          )}
+
+            {onNavigateToDispatch && (
+              <button
+                onClick={onNavigateToDispatch}
+                className="inline-flex items-center space-x-1.5 text-xs font-bold text-emerald-700 bg-emerald-50 hover:bg-emerald-100 px-3.5 py-2 rounded-lg border border-emerald-200 transition-colors cursor-pointer"
+              >
+                <span>Go to Fair Work Allocation</span>
+                <ArrowRight className="w-3.5 h-3.5" />
+              </button>
+            )}
+          </div>
         </div>
 
         {/* Cooperative Admin Controls */}
@@ -391,6 +407,13 @@ export const DemandForecastPage: React.FC<DemandForecastPageProps> = ({
 
       {/* AI Insights Panel */}
       <AIInsightCard insights={aiInsights} />
+
+      {/* Live Demand Dataset Management Modal */}
+      <ManageDemandDataModal
+        isOpen={isManageDataOpen}
+        onClose={() => setIsManageDataOpen(false)}
+        onDataUpdated={loadForecast}
+      />
     </div>
   );
 };

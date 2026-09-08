@@ -24,11 +24,11 @@ export const FairnessMetrics: React.FC<FairnessMetricsProps> = ({ stats }) => {
             <div className="flex items-center space-x-2">
               <h3 className="font-bold text-base text-white">Worker Opportunity Distribution Analytics</h3>
               <span className="text-2xs font-semibold px-2 py-0.5 rounded bg-emerald-950 text-emerald-300 border border-emerald-700">
-                Demo Simulation
+                Live Cooperative Telemetry
               </span>
             </div>
             <p className="text-xs text-slate-300 mt-0.5">
-              Comparative impact analysis: Traditional Rating-First assignment vs SahakarGig Fair Allocation
+              Live mathematical analysis calculated across registered cooperative workers: Rating-First monopoly vs SahakarGig Fair Allocation
             </p>
           </div>
         </div>
