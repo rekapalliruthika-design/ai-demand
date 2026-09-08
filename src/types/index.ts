@@ -58,7 +58,7 @@ export interface DemandRecord {
   weatherCondition?: string;
 }
 
-export type DemandLevel = 'High' | 'Medium' | 'Low';
+export type DemandLevel = 'Critical' | 'High' | 'Medium' | 'Low';
 
 export interface DailyForecastPoint {
   date: string;
@@ -87,6 +87,8 @@ export interface DemandForecast {
 export interface ForecastSummaryKPIs {
   predictedJobs7Days: number;
   highDemandAreasCount: number;
+  criticalDemandCount: number;
+  urgentAlertsCount: number;
   topDemandService: string;
   workforceNeededCount: number;
   forecastConfidenceAvg: number;

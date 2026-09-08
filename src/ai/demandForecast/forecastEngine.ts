@@ -50,7 +50,9 @@ export class ForecastEngine {
 
     // Compute aggregate KPIs
     const totalPredictedJobs = areaForecasts.reduce((sum, item) => sum + item.predictedJobs, 0);
+    const criticalCount = areaForecasts.filter(item => item.demandLevel === 'Critical').length;
     const highDemandCount = areaForecasts.filter(item => item.demandLevel === 'High').length;
+    const urgentAlertsCount = criticalCount + highDemandCount;
 
     // Determine top service across forecasts
     const serviceDemandMap = new Map<string, number>();
@@ -78,7 +80,9 @@ export class ForecastEngine {
 
     const kpis: ForecastSummaryKPIs = {
       predictedJobs7Days: totalPredictedJobs > 0 ? totalPredictedJobs : 184,
-      highDemandAreasCount: highDemandCount > 0 ? highDemandCount : 6,
+      highDemandAreasCount: highDemandCount,
+      criticalDemandCount: criticalCount,
+      urgentAlertsCount: urgentAlertsCount > 0 ? urgentAlertsCount : 5,
       topDemandService: topService,
       workforceNeededCount: totalWorkforceNeeded > 0 ? totalWorkforceNeeded : 27,
       forecastConfidenceAvg: avgConfidence || 87
@@ -162,10 +166,26 @@ export class ForecastEngine {
           else if (area.name.includes('Area D') && service === 'Carpentry') finalPredicted = 15;
         }
 
-        // Demand Level
+        // Workers currently available in this area with this skill
+        const currentWorkforce = MOCK_WORKERS.filter(
+          w => w.serviceArea === area.name &&
+               w.skills.some(s => s.toLowerCase().includes(service.toLowerCase())) &&
+               w.availability !== 'unavailable'
+        ).length;
+
+        // Recommended workforce: ~5 to 6 jobs per worker per week
+        const recommendedWorkforce = Math.max(1, Math.ceil(finalPredicted / 5.2));
+        const shortageOrSurplus = recommendedWorkforce - currentWorkforce;
+
+        // Demand Level: 'Critical' for severe volume or high volume with workforce shortage, 'High' for elevated demand
         let demandLevel: DemandLevel = 'Medium';
-        if (finalPredicted >= 25) demandLevel = 'High';
-        else if (finalPredicted < 14) demandLevel = 'Low';
+        if (finalPredicted >= 30 || (finalPredicted >= 25 && shortageOrSurplus >= 2)) {
+          demandLevel = 'Critical';
+        } else if (finalPredicted >= 20 || (finalPredicted >= 16 && shortageOrSurplus > 0)) {
+          demandLevel = 'High';
+        } else if (finalPredicted < 14) {
+          demandLevel = 'Low';
+        }
 
         // Trend calculation
         const historical7DayAvg = Math.round(avgRequestsPerDay * 7);
@@ -178,17 +198,6 @@ export class ForecastEngine {
           ? subset.reduce((acc, r) => acc + r.cancelled, 0) / (totalRequests || 1)
           : 0.1;
         const confidence = Math.min(94, Math.max(78, Math.round(89 - cancellationRate * 30 + Math.min(subset.length, 10))));
-
-        // Workers currently available in this area with this skill
-        const currentWorkforce = MOCK_WORKERS.filter(
-          w => w.serviceArea === area.name &&
-               w.skills.some(s => s.toLowerCase().includes(service.toLowerCase())) &&
-               w.availability !== 'unavailable'
-        ).length;
-
-        // Recommended workforce: ~5 to 6 jobs per worker per week
-        const recommendedWorkforce = Math.max(1, Math.ceil(finalPredicted / 5.2));
-        const shortageOrSurplus = recommendedWorkforce - currentWorkforce;
 
         // Action recommendation
         let recommendedAction = `Sufficient capacity (${currentWorkforce} active workers).`;
@@ -218,9 +227,9 @@ export class ForecastEngine {
       }
     }
 
-    // Sort: High demand first, then by predicted volume descending
+    // Sort: Critical & High demand first, then by predicted volume descending
     return results.sort((a, b) => {
-      const levelWeight = { High: 3, Medium: 2, Low: 1 };
+      const levelWeight: Record<DemandLevel, number> = { Critical: 4, High: 3, Medium: 2, Low: 1 };
       if (levelWeight[b.demandLevel] !== levelWeight[a.demandLevel]) {
         return levelWeight[b.demandLevel] - levelWeight[a.demandLevel];
       }

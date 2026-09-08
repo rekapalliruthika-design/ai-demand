@@ -1,21 +1,36 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { DemandForecast } from '../types';
-import { MapPin, Users, ArrowUpRight, AlertCircle, CheckCircle2 } from 'lucide-react';
+import { MapPin, Users, ArrowUpRight, AlertCircle, CheckCircle2, AlertTriangle, Filter } from 'lucide-react';
 
 interface DemandLocationCardProps {
   forecasts: DemandForecast[];
   onSelectArea?: (areaName: string, serviceName: string) => void;
+  urgentOnlyDefault?: boolean;
 }
 
 export const DemandLocationCard: React.FC<DemandLocationCardProps> = ({
   forecasts,
-  onSelectArea
+  onSelectArea,
+  urgentOnlyDefault = false
 }) => {
-  // Show top 8 demand locations
-  const displayItems = forecasts.slice(0, 8);
+  const [filterUrgentOnly, setFilterUrgentOnly] = useState(urgentOnlyDefault);
+
+  const urgentAlerts = forecasts.filter(f => f.demandLevel === 'Critical' || f.demandLevel === 'High');
+  const criticalCount = forecasts.filter(f => f.demandLevel === 'Critical').length;
+  const highCount = forecasts.filter(f => f.demandLevel === 'High').length;
+
+  const filteredItems = filterUrgentOnly ? urgentAlerts : forecasts;
+  const displayItems = filteredItems.slice(0, 10);
 
   const getDemandBadge = (level: string) => {
     switch (level) {
+      case 'Critical':
+        return (
+          <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-bold bg-red-600 text-white shadow-xs">
+            <span className="w-1.5 h-1.5 rounded-full bg-white mr-1.5 animate-ping"></span>
+            Critical Demand
+          </span>
+        );
       case 'High':
         return (
           <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-semibold bg-rose-100 text-rose-800 border border-rose-200">
@@ -43,18 +58,54 @@ export const DemandLocationCard: React.FC<DemandLocationCardProps> = ({
   return (
     <div className="bg-white rounded-xl border border-slate-200 shadow-sm overflow-hidden">
       {/* Header */}
-      <div className="px-5 py-4 border-b border-slate-100 flex flex-col sm:flex-row sm:items-center justify-between gap-2">
+      <div className="px-5 py-4 border-b border-slate-100 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
         <div>
-          <h3 className="font-semibold text-slate-900 text-base flex items-center space-x-2">
-            <MapPin className="w-4 h-4 text-emerald-600" />
-            <span>High Demand Areas — Cooperative Hubs</span>
-          </h3>
+          <div className="flex items-center space-x-2.5 flex-wrap gap-y-1">
+            <h3 className="font-semibold text-slate-900 text-base flex items-center space-x-2">
+              <MapPin className="w-4 h-4 text-emerald-600" />
+              <span>Forecasted Demand by Cooperative Hubs</span>
+            </h3>
+
+            {urgentAlerts.length > 0 && (
+              <span className="inline-flex items-center space-x-1.5 px-2.5 py-0.5 rounded-full text-xs font-bold bg-rose-100 text-rose-800 border border-rose-300 shadow-2xs animate-pulse">
+                <AlertTriangle className="w-3.5 h-3.5 text-rose-600" />
+                <span>{urgentAlerts.length} Urgent Alerts</span>
+                <span className="text-2xs font-medium text-rose-700">({criticalCount} Critical, {highCount} High)</span>
+              </span>
+            )}
+          </div>
           <p className="text-xs text-slate-500 mt-0.5">
-            Territorial job projection, current cooperative active capacity, and predicted workforce shortage
+            Territorial job projection, active cooperative capacity, and predicted workforce shortages
           </p>
         </div>
-        <div className="text-xs text-slate-500 font-medium bg-slate-50 px-2.5 py-1 rounded border border-slate-200">
-          Showing {displayItems.length} active service zones
+
+        {/* Filter toggle controls */}
+        <div className="flex items-center space-x-1.5 bg-slate-100 p-1 rounded-lg border border-slate-200 self-start sm:self-auto">
+          <button
+            onClick={() => setFilterUrgentOnly(false)}
+            className={`px-2.5 py-1 rounded text-xs font-semibold transition-all ${
+              !filterUrgentOnly
+                ? 'bg-white text-slate-900 shadow-2xs'
+                : 'text-slate-600 hover:text-slate-900'
+            }`}
+          >
+            All Zones ({forecasts.length})
+          </button>
+          <button
+            onClick={() => setFilterUrgentOnly(true)}
+            className={`px-2.5 py-1 rounded text-xs font-semibold transition-all flex items-center space-x-1.5 ${
+              filterUrgentOnly
+                ? 'bg-rose-600 text-white shadow-2xs'
+                : 'text-rose-700 hover:bg-rose-50'
+            }`}
+          >
+            <span>Urgent Alerts Only</span>
+            <span className={`px-1.5 py-0.2 rounded-full text-2xs font-bold ${
+              filterUrgentOnly ? 'bg-white text-rose-700' : 'bg-rose-200 text-rose-900'
+            }`}>
+              {urgentAlerts.length}
+            </span>
+          </button>
         </div>
       </div>
 

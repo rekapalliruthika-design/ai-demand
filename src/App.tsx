@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Navbar } from './components/Navbar';
 import { SIHDemoWalkthrough } from './components/SIHDemoWalkthrough';
 import { DemandForecastPage } from './pages/DemandForecastPage';
@@ -7,14 +7,41 @@ import { FairnessAnalyticsPage } from './pages/FairnessAnalyticsPage';
 import { WorkerDirectoryPage } from './pages/WorkerDirectoryPage';
 import { INITIAL_JOBS } from './data/jobData';
 import { workAllocationService } from './services/workAllocationService';
+import { demandForecastService } from './services/demandForecastService';
 import { Scale, ShieldCheck, HeartHandshake, Award } from 'lucide-react';
 
 type TabType = 'demand-forecast' | 'work-allocation' | 'fairness-analytics' | 'workers';
+
+interface UrgentAlertSummary {
+  location: string;
+  service: string;
+  predictedJobs: number;
+  demandLevel: string;
+  shortage: number;
+}
 
 export default function App() {
   const [activeTab, setActiveTab] = useState<TabType>('demand-forecast');
   const [demoActive, setDemoActive] = useState(false);
   const [demoStep, setDemoStep] = useState(1);
+  const [urgentAlertCount, setUrgentAlertCount] = useState<number>(5);
+  const [urgentAlerts, setUrgentAlerts] = useState<UrgentAlertSummary[]>([]);
+
+  useEffect(() => {
+    demandForecastService.getForecastData({ horizonDays: 7 }).then(res => {
+      const urgentList = res.areaForecasts.filter(f => f.demandLevel === 'Critical' || f.demandLevel === 'High');
+      setUrgentAlertCount(urgentList.length);
+      setUrgentAlerts(
+        urgentList.map(a => ({
+          location: a.location,
+          service: a.service,
+          predictedJobs: a.predictedJobs,
+          demandLevel: a.demandLevel,
+          shortage: Math.max(1, a.shortageOrSurplus)
+        }))
+      );
+    }).catch(err => console.error('Failed to preload forecast alerts', err));
+  }, []);
 
   const handleRunDemo = () => {
     setDemoActive(true);
@@ -29,13 +56,15 @@ export default function App() {
 
   return (
     <div className="min-h-screen bg-slate-100/70 text-slate-900 flex flex-col font-sans">
-      {/* Top Navigation */}
+      {/* Top Navigation with notification badge */}
       <Navbar
         activeTab={activeTab}
         setActiveTab={setActiveTab}
         onRunDemoScenario={handleRunDemo}
         onResetData={handleResetData}
         demoActive={demoActive}
+        urgentAlertCount={urgentAlertCount}
+        urgentAlerts={urgentAlerts}
       />
 
       {/* Guided Walkthrough Banner (when active) */}
@@ -54,6 +83,18 @@ export default function App() {
         {activeTab === 'demand-forecast' && (
           <DemandForecastPage
             onNavigateToDispatch={() => setActiveTab('work-allocation')}
+            onAlertsCalculated={(count, alerts) => {
+              setUrgentAlertCount(count);
+              setUrgentAlerts(
+                alerts.map(a => ({
+                  location: a.location,
+                  service: a.service,
+                  predictedJobs: a.predictedJobs,
+                  demandLevel: a.demandLevel,
+                  shortage: Math.max(1, a.shortageOrSurplus)
+                }))
+              );
+            }}
           />
         )}
 
