@@ -1,29 +1,46 @@
-import React, { useState, useEffect, useMemo } from 'react';
+import React, { useState, useEffect, useMemo, useCallback } from 'react';
 import { demandForecastService } from '../services/demandForecastService';
 import { dataStorage } from '../services/dataStorage';
-import { ForecastSummaryKPIs, DemandForecast, WorkforceRecommendation as WorkforceRecType, DailyForecastPoint } from '../types';
+import {
+  AdminDemandFilters,
+  CurrentDemandKPIs,
+  DemandTrendMetrics,
+  StatisticalForecastResult,
+  DemandRiskRadarItem,
+  WorkforceReadinessItem,
+  OperationalRecommendationItem,
+  DemandAnomalyItem,
+  ServiceIntelligenceItem,
+  LocationIntelligenceItem,
+  WorkforceRebalancingOpportunity
+} from '../types';
 import { SERVICE_CATEGORIES, COOPERATIVE_AREAS } from '../data/demandHistory';
-import { generateAIInsights } from '../ai/demandForecast/demandAnalyzer';
-import { DemandForecastChart } from '../components/DemandForecastChart';
-import { DemandLocationCard } from '../components/DemandLocationCard';
-import { WorkforceRecommendation } from '../components/WorkforceRecommendation';
-import { AIInsightCard } from '../components/AIInsightCard';
+import { CurrentDemandKPIsSection } from '../components/demand/CurrentDemandKPIsSection';
+import { DemandTrendForecastSection } from '../components/demand/DemandTrendForecastSection';
+import { DemandRiskRadarSection } from '../components/demand/DemandRiskRadarSection';
+import { WorkforceReadinessSection } from '../components/demand/WorkforceReadinessSection';
+import { OperationsActionCenterSection } from '../components/demand/OperationsActionCenterSection';
+import { DemandAnomaliesSection } from '../components/demand/DemandAnomaliesSection';
+import { ServiceIntelligenceSection } from '../components/demand/ServiceIntelligenceSection';
+import { LocationIntelligenceSection } from '../components/demand/LocationIntelligenceSection';
+import { DemandScenarioSimulatorSection } from '../components/demand/DemandScenarioSimulatorSection';
+import { WorkforceRebalancingSection } from '../components/demand/WorkforceRebalancingSection';
 import { ManageDemandDataModal } from '../components/ManageDemandDataModal';
 import {
   TrendingUp,
   MapPin,
   Users,
-  ShieldCheck,
   Calendar,
   Briefcase,
   Layers,
   Filter,
   RefreshCw,
-  Sparkles,
+  Database,
   ArrowRight,
   AlertTriangle,
   Bell,
-  Database
+  Cpu,
+  ShieldCheck
 } from 'lucide-react';
 
 interface DemandForecastPageProps {
@@ -35,88 +52,137 @@ export const DemandForecastPage: React.FC<DemandForecastPageProps> = ({
   onNavigateToDispatch,
   onAlertsCalculated
 }) => {
+  // Filter States
   const [horizonDays, setHorizonDays] = useState<7 | 14 | 30>(7);
   const [selectedService, setSelectedService] = useState<string>('All');
   const [selectedLocation, setSelectedLocation] = useState<string>('All');
-  const [loading, setLoading] = useState(false);
   const [isManageDataOpen, setIsManageDataOpen] = useState(false);
-
-  // Data state
-  const [kpis, setKpis] = useState<ForecastSummaryKPIs>({
-    predictedJobs7Days: 184,
-    highDemandAreasCount: 4,
-    criticalDemandCount: 1,
-    urgentAlertsCount: 5,
-    topDemandService: 'Plumbing',
-    workforceNeededCount: 27,
-    forecastConfidenceAvg: 87
-  });
-  const [areaForecasts, setAreaForecasts] = useState<DemandForecast[]>([]);
-  const [recommendations, setRecommendations] = useState<WorkforceRecType[]>([]);
-  const [timelineData, setTimelineData] = useState<DailyForecastPoint[]>([]);
+  const [loading, setLoading] = useState(false);
   const [noticeAlert, setNoticeAlert] = useState<string | null>(null);
 
-  // Urgent alerts calculations
-  const urgentForecasts = useMemo(() => {
-    return areaForecasts.filter(f => f.demandLevel === 'Critical' || f.demandLevel === 'High');
-  }, [areaForecasts]);
+  // Real Platform Intelligence Data States
+  const [currentKPIs, setCurrentKPIs] = useState<CurrentDemandKPIs>({
+    requestsToday: 0,
+    requestsThisWeek: 0,
+    completedJobs: 0,
+    pendingRequests: 0,
+    cancellationRate: 0,
+    avgResponseTimeMinutes: 25,
+    topRequestedServices: [],
+    topDemandLocations: []
+  });
 
-  const criticalCount = useMemo(() => {
-    return areaForecasts.filter(f => f.demandLevel === 'Critical').length;
-  }, [areaForecasts]);
+  const [trendMetrics, setTrendMetrics] = useState<DemandTrendMetrics>({
+    service: 'All Services',
+    location: 'All Zones',
+    previousPeriodRequests: 0,
+    currentPeriodRequests: 0,
+    growthPercentage: 0,
+    trendDirection: 'stable',
+    dayOfWeekPatterns: [],
+    timeSlotPatterns: [],
+    peakTimeSlot: 'Evening (5 PM - 9 PM)',
+    peakPeriodInsight: 'Loading platform intelligence...'
+  });
 
-  const highCount = useMemo(() => {
-    return areaForecasts.filter(f => f.demandLevel === 'High').length;
-  }, [areaForecasts]);
+  const [forecastList, setForecastList] = useState<StatisticalForecastResult[]>([]);
+  const [riskRadar, setRiskRadar] = useState<DemandRiskRadarItem[]>([]);
+  const [workforceReadiness, setWorkforceReadiness] = useState<WorkforceReadinessItem[]>([]);
+  const [operationalRecs, setOperationalRecs] = useState<OperationalRecommendationItem[]>([]);
+  const [anomalies, setAnomalies] = useState<DemandAnomalyItem[]>([]);
+  const [serviceIntel, setServiceIntel] = useState<ServiceIntelligenceItem[]>([]);
+  const [locationIntel, setLocationIntel] = useState<LocationIntelligenceItem[]>([]);
+  const [rebalancingOpps, setRebalancingOpps] = useState<WorkforceRebalancingOpportunity[]>([]);
 
-  const totalUrgentAlerts = urgentForecasts.length || kpis.urgentAlertsCount || 5;
-
-  // Load forecast data
-  const loadForecast = async () => {
+  // Load all intelligence modules from live platform data
+  const loadIntelligence = useCallback(async () => {
     setLoading(true);
     try {
-      const data = await demandForecastService.getForecastData({
+      const filters: AdminDemandFilters = {
         horizonDays,
         service: selectedService,
-        location: selectedLocation
-      });
-      setKpis(data.kpis);
-      setAreaForecasts(data.areaForecasts);
-      setRecommendations(data.recommendations);
-      setTimelineData(data.timelineForecast);
+        location: selectedLocation,
+        timeSlot: 'All',
+        riskLevel: 'All'
+      };
 
-      const urgentList = data.areaForecasts.filter(f => f.demandLevel === 'Critical' || f.demandLevel === 'High');
-      onAlertsCalculated?.(urgentList.length, urgentList);
+      // 1. Current Demand KPIs
+      const kpis = await demandForecastService.getDemandAnalytics(filters);
+      setCurrentKPIs(kpis);
+
+      // 2. Trend Metrics & Time-Slot Patterns
+      const trends = await demandForecastService.getDemandTrendAnalysis(filters);
+      setTrendMetrics(trends);
+
+      // 3. Statistical Forecast Projections
+      const forecasts = await demandForecastService.getDemandForecast(filters);
+      setForecastList(forecasts);
+
+      // 4. Demand Risk Radar
+      const risks = await demandForecastService.getDemandRiskRadar(filters, forecasts);
+      setRiskRadar(risks);
+
+      // 5. Workforce Readiness
+      const readiness = await demandForecastService.getWorkforceReadiness(risks);
+      setWorkforceReadiness(readiness);
+
+      // 6. Operational Action Center
+      const recs = await demandForecastService.getOperationalRecommendations(risks, readiness);
+      setOperationalRecs(recs);
+
+      // 7. Anomalies
+      const detectedAnomalies = await demandForecastService.getDemandAnomalies(filters);
+      setAnomalies(detectedAnomalies);
+
+      // 8. Service Intelligence
+      const services = await demandForecastService.getServiceIntelligence();
+      setServiceIntel(services);
+
+      // 9. Location Intelligence
+      const locations = await demandForecastService.getLocationIntelligence();
+      setLocationIntel(locations);
+
+      // 10. Rebalancing Opportunities
+      const rebal = await demandForecastService.getWorkforceRebalancingOpportunities(readiness);
+      setRebalancingOpps(rebal);
+
+      // Report urgent alerts count
+      const urgentRisks = risks.filter(r => r.riskLevel === 'Critical' || r.riskLevel === 'High');
+      onAlertsCalculated?.(urgentRisks.length, urgentRisks);
     } catch (err) {
-      console.error('Failed to load forecast data', err);
+      console.error('Failed to calculate demand intelligence:', err);
     } finally {
       setLoading(false);
     }
-  };
+  }, [horizonDays, selectedService, selectedLocation, onAlertsCalculated]);
 
   useEffect(() => {
-    loadForecast();
-  }, [horizonDays, selectedService, selectedLocation]);
+    loadIntelligence();
+  }, [loadIntelligence]);
 
-  // Generate dynamic AI insights from live worker pool
-  const aiInsights = useMemo(() => {
-    return generateAIInsights(areaForecasts, dataStorage.getWorkers());
-  }, [areaForecasts]);
+  // Primary forecast to visualize in Section 2 chart
+  const primaryForecast = useMemo(() => {
+    if (forecastList.length === 0) return null;
+    // Return matching or first valid
+    return forecastList.find(f => !f.isInsufficientData) || forecastList[0];
+  }, [forecastList]);
 
-  const handleActionTriggered = (rec: WorkforceRecType) => {
-    setNoticeAlert(
-      `✓ Preparation notice dispatched to cooperative workers for ${rec.service} in ${rec.location}. Roster updated.`
-    );
-    setTimeout(() => setNoticeAlert(null), 5000);
-  };
+  // Urgent alerts for banner
+  const urgentCount = useMemo(() => {
+    return riskRadar.filter(r => r.riskLevel === 'Critical' || r.riskLevel === 'High').length;
+  }, [riskRadar]);
+
+  const criticalCount = useMemo(() => {
+    return riskRadar.filter(r => r.riskLevel === 'Critical').length;
+  }, [riskRadar]);
 
   const demandHistoryCount = dataStorage.getDemandHistory().length;
 
   return (
-    <div className="space-y-6 pb-12">
-      {/* Toast alert when preparation notice dispatched */}
+    <div className="space-y-6 pb-16">
+      {/* Toast Alert */}
       {noticeAlert && (
-        <div className="bg-emerald-900 text-emerald-100 px-4 py-3 rounded-xl border border-emerald-700 shadow-md flex items-center justify-between text-xs animate-in slide-in-from-top duration-200">
+        <div className="bg-emerald-900 text-emerald-100 px-4 py-3 rounded-xl border border-emerald-700 shadow-md flex items-center justify-between text-xs">
           <span className="font-semibold">{noticeAlert}</span>
           <button
             onClick={() => setNoticeAlert(null)}
@@ -127,66 +193,66 @@ export const DemandForecastPage: React.FC<DemandForecastPageProps> = ({
         </div>
       )}
 
-      {/* Top Section Header & Filter Controls */}
-      <div className="bg-white rounded-2xl border border-slate-200 p-5 shadow-sm">
+      {/* Main Header & Global Filter Bar */}
+      <div className="bg-white rounded-2xl border border-slate-200 p-5 shadow-xs">
         <div className="flex flex-col lg:flex-row lg:items-center justify-between pb-4 mb-4 border-b border-slate-100 gap-4">
           <div>
             <div className="flex items-center space-x-2 flex-wrap gap-y-1">
-              <span className="text-2xs font-bold px-2 py-0.5 rounded bg-emerald-100 text-emerald-800 uppercase tracking-wider">
-                Module 1
+              <span className="text-2xs font-extrabold px-2.5 py-0.5 rounded-full bg-emerald-100 text-emerald-900 uppercase tracking-wider">
+                Production Intelligence Engine
               </span>
-              <h2 className="text-xl font-bold text-slate-900 tracking-tight">
-                AI Service Demand Forecasting
+              <h2 className="text-xl font-black text-slate-900 tracking-tight">
+                AI Demand Intelligence & Workforce Planning
               </h2>
-              {totalUrgentAlerts > 0 && (
-                <span className="inline-flex items-center space-x-1 px-2.5 py-0.5 rounded-full text-xs font-bold bg-rose-600 text-white shadow-xs animate-pulse">
+              {urgentCount > 0 && (
+                <span className="inline-flex items-center space-x-1 px-2.5 py-0.5 rounded-full text-xs font-bold bg-rose-600 text-white shadow-2xs">
                   <AlertTriangle className="w-3.5 h-3.5 text-white" />
-                  <span>{totalUrgentAlerts} Urgent Alerts Forecasted</span>
+                  <span>{urgentCount} Urgent Deficits Detected</span>
                 </span>
               )}
             </div>
-            <p className="text-xs text-slate-500 mt-1">
-              Anticipate service spikes across cooperative zones before demand surge, enabling preemptive workforce preparation
+            <p className="text-xs text-slate-600 mt-1">
+              Anticipate service spikes across cooperative zones using real platform data, deterministic statistical formulations, and live worker capacity
             </p>
           </div>
 
-          {/* Quick links & Live Data Management */}
+          {/* Quick Action Buttons */}
           <div className="flex flex-wrap items-center gap-2 self-start lg:self-auto">
             <button
               onClick={() => setIsManageDataOpen(true)}
-              className="inline-flex items-center space-x-1.5 text-xs font-bold text-slate-700 bg-slate-100 hover:bg-slate-200 px-3.5 py-2 rounded-lg border border-slate-300 transition-colors cursor-pointer"
+              className="inline-flex items-center space-x-1.5 text-xs font-bold text-slate-700 bg-slate-100 hover:bg-slate-200 px-3.5 py-2 rounded-xl border border-slate-300 transition-colors cursor-pointer"
               title="Manage live demand dataset, import CSV, or log new service requests"
             >
               <Database className="w-3.5 h-3.5 text-emerald-700" />
-              <span>Manage Live Data ({demandHistoryCount})</span>
+              <span>Live Dataset ({demandHistoryCount} logs)</span>
             </button>
 
             {onNavigateToDispatch && (
               <button
                 onClick={onNavigateToDispatch}
-                className="inline-flex items-center space-x-1.5 text-xs font-bold text-emerald-700 bg-emerald-50 hover:bg-emerald-100 px-3.5 py-2 rounded-lg border border-emerald-200 transition-colors cursor-pointer"
+                className="inline-flex items-center space-x-1.5 text-xs font-bold text-emerald-800 bg-emerald-50 hover:bg-emerald-100 px-3.5 py-2 rounded-xl border border-emerald-200 transition-colors cursor-pointer"
               >
-                <span>Go to Fair Work Allocation</span>
+                <span>Fair Work Allocation</span>
                 <ArrowRight className="w-3.5 h-3.5" />
               </button>
             )}
           </div>
         </div>
 
-        {/* Cooperative Admin Controls */}
+        {/* Global Filter Bar */}
         <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
           {/* Forecast Horizon */}
           <div>
-            <label className="text-xs font-semibold text-slate-700 flex items-center space-x-1.5 mb-1.5">
+            <label className="text-xs font-bold text-slate-700 flex items-center space-x-1.5 mb-1.5">
               <Calendar className="w-3.5 h-3.5 text-slate-400" />
-              <span>Forecast Horizon</span>
+              <span>Planning Horizon</span>
             </label>
-            <div className="grid grid-cols-3 gap-1 bg-slate-100 p-1 rounded-lg border border-slate-200">
+            <div className="grid grid-cols-3 gap-1 bg-slate-100 p-1 rounded-xl border border-slate-200">
               {([7, 14, 30] as const).map(d => (
                 <button
                   key={`horizon-${d}`}
                   onClick={() => setHorizonDays(d)}
-                  className={`py-1 rounded text-xs font-semibold transition-all ${
+                  className={`py-1 rounded-lg text-xs font-bold transition-all ${
                     horizonDays === d
                       ? 'bg-white text-slate-900 shadow-2xs'
                       : 'text-slate-600 hover:text-slate-900'
@@ -200,14 +266,14 @@ export const DemandForecastPage: React.FC<DemandForecastPageProps> = ({
 
           {/* Service Filter */}
           <div>
-            <label className="text-xs font-semibold text-slate-700 flex items-center space-x-1.5 mb-1.5">
+            <label className="text-xs font-bold text-slate-700 flex items-center space-x-1.5 mb-1.5">
               <Briefcase className="w-3.5 h-3.5 text-slate-400" />
-              <span>Service Category</span>
+              <span>Cooperative Trade</span>
             </label>
             <select
               value={selectedService}
               onChange={e => setSelectedService(e.target.value)}
-              className="w-full text-xs font-medium px-3 py-2 rounded-lg border border-slate-200 bg-white focus:outline-hidden focus:ring-2 focus:ring-emerald-500"
+              className="w-full text-xs font-semibold px-3 py-2 rounded-xl border border-slate-200 bg-white focus:outline-hidden focus:ring-2 focus:ring-emerald-500"
             >
               <option value="All">All Cooperative Trades</option>
               {SERVICE_CATEGORIES.map(s => (
@@ -218,16 +284,16 @@ export const DemandForecastPage: React.FC<DemandForecastPageProps> = ({
 
           {/* Location Filter */}
           <div>
-            <label className="text-xs font-semibold text-slate-700 flex items-center space-x-1.5 mb-1.5">
+            <label className="text-xs font-bold text-slate-700 flex items-center space-x-1.5 mb-1.5">
               <MapPin className="w-3.5 h-3.5 text-slate-400" />
-              <span>Cooperative Hub / Locality</span>
+              <span>Cooperative Area / Hub</span>
             </label>
             <select
               value={selectedLocation}
               onChange={e => setSelectedLocation(e.target.value)}
-              className="w-full text-xs font-medium px-3 py-2 rounded-lg border border-slate-200 bg-white focus:outline-hidden focus:ring-2 focus:ring-emerald-500"
+              className="w-full text-xs font-semibold px-3 py-2 rounded-xl border border-slate-200 bg-white focus:outline-hidden focus:ring-2 focus:ring-emerald-500"
             >
-              <option value="All">All Cooperative Zones</option>
+              <option value="All">All Cooperative Hubs</option>
               {COOPERATIVE_AREAS.map(a => (
                 <option key={a.id} value={a.name}>{a.name}</option>
               ))}
@@ -236,183 +302,118 @@ export const DemandForecastPage: React.FC<DemandForecastPageProps> = ({
         </div>
       </div>
 
-      {/* Urgent Workforce Needs Alert Notification Banner */}
-      {totalUrgentAlerts > 0 && (
+      {/* Urgent Operational Deficit Banner */}
+      {urgentCount > 0 && (
         <div className="bg-gradient-to-r from-rose-950 via-slate-900 to-rose-950 text-white rounded-2xl border-2 border-rose-600/70 p-4 sm:p-5 shadow-lg relative overflow-hidden">
-          <div className="absolute -right-10 -top-10 w-44 h-44 bg-rose-500/15 rounded-full blur-2xl pointer-events-none" />
-
           <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-4 relative z-10">
             <div className="flex items-start sm:items-center space-x-3.5">
-              <div className="relative shrink-0">
-                <div className="w-11 h-11 rounded-xl bg-rose-600 flex items-center justify-center text-white shadow-md">
-                  <Bell className="w-5 h-5 animate-bounce" />
-                </div>
-                <span className="absolute -top-1 -right-1 flex h-4 w-4">
-                  <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-rose-400 opacity-75"></span>
-                  <span className="relative inline-flex rounded-full h-4 w-4 bg-rose-500 text-white text-3xs font-bold items-center justify-center">
-                    {totalUrgentAlerts}
-                  </span>
-                </span>
+              <div className="w-11 h-11 rounded-xl bg-rose-600 flex items-center justify-center text-white shadow-md shrink-0">
+                <Bell className="w-5 h-5 animate-bounce" />
               </div>
 
               <div>
                 <div className="flex items-center space-x-2.5 flex-wrap gap-y-1">
                   <h3 className="text-base font-bold text-white tracking-tight">
-                    Urgent Workforce Demand Alerts
+                    Urgent Capacity Shortage Alerts
                   </h3>
-                  <span className="px-2.5 py-0.5 rounded-full text-xs font-bold bg-rose-600 text-white border border-rose-400 shadow-xs flex items-center space-x-1">
-                    <span className="w-1.5 h-1.5 rounded-full bg-white animate-ping mr-1"></span>
-                    <span>{totalUrgentAlerts} Spikes Forecasted</span>
-                  </span>
-                  <span className="text-xs text-rose-300 font-medium">
-                    ({criticalCount} Critical, {highCount} High Priority)
+                  <span className="px-2.5 py-0.5 rounded-full text-xs font-bold bg-rose-600 text-white border border-rose-400 shadow-2xs">
+                    {urgentCount} Deficits Identified ({criticalCount} Critical)
                   </span>
                 </div>
                 <p className="text-xs text-slate-300 mt-1 max-w-2xl">
-                  Surging service demand with projected workforce deficits identified in{' '}
+                  Forecasted demand in{' '}
                   <span className="text-white font-semibold">
-                    {urgentForecasts && urgentForecasts.length > 0
-                      ? urgentForecasts.slice(0, 3).map(u => `${(u.location || '').split(' - ')[0]} (${u.service})`).join(', ')
-                      : 'Area A (Plumbing) & Area B (Electrical)'}
-                  </span>
-                  . Preemptive inter-zone worker mobilization required to avoid service bottlenecks and SLA delays.
+                    {riskRadar
+                      .filter(r => r.riskLevel === 'Critical' || r.riskLevel === 'High')
+                      .slice(0, 3)
+                      .map(r => `${r.location.split(' - ')[0]} (${r.service})`)
+                      .join(', ')}
+                  </span>{' '}
+                  exceeds active certified cooperative capacity. Preemptive cross-zone rebalancing recommended.
                 </p>
               </div>
             </div>
 
-            <div className="flex items-center space-x-2 shrink-0 self-start lg:self-auto">
-              <button
-                onClick={() => {
-                  const tableEl = document.getElementById('hub-demand-table');
-                  tableEl?.scrollIntoView({ behavior: 'smooth' });
-                }}
-                className="px-3.5 py-2 rounded-lg bg-rose-600 hover:bg-rose-500 text-white text-xs font-bold transition-all shadow-sm flex items-center space-x-1.5 cursor-pointer"
-              >
-                <AlertTriangle className="w-3.5 h-3.5" />
-                <span>Review {totalUrgentAlerts} Urgent Needs</span>
-              </button>
-
-              {onNavigateToDispatch && (
-                <button
-                  onClick={onNavigateToDispatch}
-                  className="px-3.5 py-2 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-200 text-xs font-semibold border border-slate-700 transition-all flex items-center space-x-1 cursor-pointer"
-                >
-                  <span>Fair Dispatch</span>
-                  <ArrowRight className="w-3.5 h-3.5" />
-                </button>
-              )}
-            </div>
+            <button
+              onClick={() => {
+                const el = document.getElementById('section-action-center');
+                el?.scrollIntoView({ behavior: 'smooth' });
+              }}
+              className="px-4 py-2 rounded-xl bg-rose-600 hover:bg-rose-500 text-white text-xs font-bold transition-all shadow-2xs flex items-center space-x-1.5 cursor-pointer self-start lg:self-auto shrink-0"
+            >
+              <AlertTriangle className="w-3.5 h-3.5" />
+              <span>Review Action Center</span>
+            </button>
           </div>
         </div>
       )}
 
-      {/* 5 KPI Cards (Explicit prompt requirement) */}
-      <div className="grid grid-cols-2 lg:grid-cols-5 gap-3.5">
-        {/* Predicted Jobs */}
-        <div className="bg-white rounded-xl p-4 border border-slate-200 shadow-sm">
-          <div className="text-slate-500 text-xs font-medium mb-1">
-            Predicted Jobs — Next {horizonDays}d
-          </div>
-          <div className="text-2xl font-extrabold text-slate-900 tracking-tight">
-            {kpis.predictedJobs7Days}
-          </div>
-          <div className="text-2xs text-emerald-700 font-semibold mt-1 flex items-center">
-            <TrendingUp className="w-3 h-3 mr-1" />
-            +18% weekly momentum
-          </div>
+      {/* SECTION 1: Current Demand KPIs */}
+      <section>
+        <div className="flex items-center justify-between mb-2">
+          <h3 className="text-xs font-bold uppercase tracking-wider text-slate-600">
+            Section 1: Current Demand KPIs & Activity
+          </h3>
         </div>
+        <CurrentDemandKPIsSection kpis={currentKPIs} loading={loading} />
+      </section>
 
-        {/* High & Critical Demand Areas */}
-        <div className="bg-white rounded-xl p-4 border border-slate-200 shadow-sm relative overflow-hidden">
-          {criticalCount > 0 && (
-            <div className="absolute top-0 right-0 w-1.5 h-full bg-rose-600" />
-          )}
-          <div className="flex items-center justify-between">
-            <div className="text-slate-500 text-xs font-medium mb-1">High & Critical Zones</div>
-            <span className="px-2 py-0.5 rounded-full text-2xs font-bold bg-rose-100 text-rose-800 border border-rose-200">
-              {totalUrgentAlerts} Alerts
-            </span>
-          </div>
-          <div className="text-2xl font-extrabold text-slate-900 tracking-tight flex items-baseline space-x-1.5">
-            <span>{totalUrgentAlerts}</span>
-            {criticalCount > 0 && (
-              <span className="text-xs font-bold text-rose-600">
-                ({criticalCount} Critical)
-              </span>
-            )}
-          </div>
-          <div className="text-2xs text-rose-700 font-semibold mt-1">
-            Urgent mobilization needed
-          </div>
-        </div>
-
-        {/* Top Service */}
-        <div className="bg-white rounded-xl p-4 border border-slate-200 shadow-sm">
-          <div className="text-slate-500 text-xs font-medium mb-1">Highest Demand Service</div>
-          <div className="text-xl font-bold text-slate-900 truncate tracking-tight">
-            {kpis.topDemandService}
-          </div>
-          <div className="text-2xs text-slate-500 mt-1">
-            32 projected requests
-          </div>
-        </div>
-
-        {/* Workforce Needed */}
-        <div className="bg-white rounded-xl p-4 border border-slate-200 shadow-sm">
-          <div className="text-slate-500 text-xs font-medium mb-1">Workforce Needed</div>
-          <div className="text-2xl font-extrabold text-emerald-700 tracking-tight">
-            {kpis.workforceNeededCount} workers
-          </div>
-          <div className="text-2xs text-slate-500 mt-1">
-            Active cooperative capacity
-          </div>
-        </div>
-
-        {/* Forecast Confidence */}
-        <div className="bg-white rounded-xl p-4 border border-slate-200 shadow-sm col-span-2 sm:col-span-1">
-          <div className="text-slate-500 text-xs font-medium mb-1">Forecast Confidence</div>
-          <div className="text-2xl font-extrabold text-slate-900 tracking-tight flex items-center space-x-1">
-            <span>{kpis.forecastConfidenceAvg}%</span>
-            <ShieldCheck className="w-4 h-4 text-emerald-600" />
-          </div>
-          <div className="text-2xs text-emerald-700 font-semibold mt-1">
-            Standard error &lt; 8.4%
-          </div>
-        </div>
-      </div>
-
-      {/* Visual Forecast Chart */}
-      <DemandForecastChart
-        data={timelineData}
-        serviceTitle={selectedService === 'All' ? 'All Cooperative Services' : selectedService}
-        horizonDays={horizonDays}
-      />
-
-      {/* High Demand Areas Table & Visualizations */}
-      <div id="hub-demand-table">
-        <DemandLocationCard
-          forecasts={areaForecasts}
-          onSelectArea={(area, srv) => {
-            setSelectedLocation(area);
-            setSelectedService(srv);
-          }}
+      {/* SECTION 2: Demand Trend + Time-Series Forecast */}
+      <section>
+        <DemandTrendForecastSection
+          forecast={primaryForecast}
+          trendMetrics={trendMetrics}
+          serviceTitle={selectedService === 'All' ? 'All Cooperative Services' : selectedService}
+          locationTitle={selectedLocation === 'All' ? 'All Cooperative Hubs' : selectedLocation}
+          horizonDays={horizonDays}
         />
-      </div>
+      </section>
 
-      {/* AI Workforce Preparation Recommendations */}
-      <WorkforceRecommendation
-        recommendations={recommendations}
-        onActionTriggered={handleActionTriggered}
-      />
+      {/* SECTION 3: Demand Risk Radar */}
+      <section>
+        <DemandRiskRadarSection items={riskRadar} />
+      </section>
 
-      {/* AI Insights Panel */}
-      <AIInsightCard insights={aiInsights} />
+      {/* SECTION 4: Workforce Readiness */}
+      <section>
+        <WorkforceReadinessSection items={workforceReadiness} />
+      </section>
 
-      {/* Live Demand Dataset Management Modal */}
+      {/* SECTION 5: Operations Action Center */}
+      <section id="section-action-center">
+        <OperationsActionCenterSection recommendations={operationalRecs} />
+      </section>
+
+      {/* SECTION 6: Demand Anomalies */}
+      <section>
+        <DemandAnomaliesSection anomalies={anomalies} />
+      </section>
+
+      {/* SECTION 7: Service Intelligence */}
+      <section>
+        <ServiceIntelligenceSection services={serviceIntel} />
+      </section>
+
+      {/* SECTION 8: Location Intelligence */}
+      <section>
+        <LocationIntelligenceSection locations={locationIntel} />
+      </section>
+
+      {/* SECTION 9: What-If Scenario Simulator */}
+      <section>
+        <DemandScenarioSimulatorSection baseRisks={riskRadar} />
+      </section>
+
+      {/* SECTION 10: Workforce Rebalancing Opportunities */}
+      <section>
+        <WorkforceRebalancingSection opportunities={rebalancingOpps} />
+      </section>
+
+      {/* Live Dataset Management Modal */}
       <ManageDemandDataModal
         isOpen={isManageDataOpen}
         onClose={() => setIsManageDataOpen(false)}
-        onDataUpdated={loadForecast}
+        onDataUpdated={loadIntelligence}
       />
     </div>
   );

@@ -75,7 +75,7 @@ export const Navbar: React.FC<NavbarProps> = ({
               }`}
             >
               <TrendingUp className="w-4 h-4" />
-              <span>AI Demand Forecast</span>
+              <span>AI Demand Intelligence</span>
               {urgentAlertCount > 0 && (
                 <span className="inline-flex items-center justify-center px-1.5 py-0.2 rounded-full text-2xs font-extrabold bg-rose-600 text-white shadow-xs animate-pulse">
                   {urgentAlertCount}
@@ -245,7 +245,7 @@ export const Navbar: React.FC<NavbarProps> = ({
             <button
               onClick={onResetData}
               className="p-1.5 rounded-md text-slate-400 hover:text-slate-200 hover:bg-slate-800 transition-colors cursor-pointer"
-              title="Reset mock data to initial baseline"
+              title="Reset or reseed cooperative baseline dataset"
             >
               <RotateCcw className="w-4 h-4" />
             </button>
@@ -289,7 +289,7 @@ export const Navbar: React.FC<NavbarProps> = ({
               activeTab === 'workers' ? 'bg-slate-800 text-emerald-400' : 'text-slate-400'
             }`}
           >
-            Workers (22)
+            Workers
           </button>
         </div>
       </div>

@@ -50,6 +50,7 @@ export interface DemandRecord {
   dayOfWeek: string;
   service: string;
   location: string;
+  timeSlot?: 'morning' | 'afternoon' | 'evening' | 'night';
   requests: number;
   completed: number;
   cancelled: number;
@@ -183,3 +184,5 @@ export interface AIInsight {
   iconName: string;
   timestamp: string;
 }
+
+export * from './demandIntelligence';

@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { Job, AllocationResult, AllocationStrategy, AllocationCandidate } from '../types';
-import { INITIAL_JOBS } from '../data/jobData';
+import { dataStorage } from '../services/dataStorage';
 import { workAllocationService } from '../services/workAllocationService';
 import { WorkerAllocationCard } from '../components/WorkerAllocationCard';
 import { AlternativeWorkersList } from '../components/AlternativeWorkersList';
@@ -25,9 +25,30 @@ interface WorkAllocationPageProps {
 }
 
 export const WorkAllocationPage: React.FC<WorkAllocationPageProps> = ({
-  initialJob = INITIAL_JOBS[0]
+  initialJob
 }) => {
-  const [currentJob, setCurrentJob] = useState<Job>(initialJob);
+  const [currentJob, setCurrentJob] = useState<Job>(() => {
+    if (initialJob) return initialJob;
+    const existing = dataStorage.getJobs();
+    if (existing.length > 0) return existing[0];
+    return {
+      id: 'job-live-default',
+      title: 'Emergency Main Pipe Burst & Valve Rupture',
+      service: 'Plumbing',
+      category: 'Plumbing & Water Systems',
+      requiredSkills: ['Plumbing'],
+      latitude: 12.9716,
+      longitude: 77.6412,
+      location: 'Area A - Indiranagar',
+      customerName: 'Smt. Shanti Murthy',
+      customerPhone: '+91 98440 33219',
+      scheduledTime: 'Immediate (Within 1 hr)',
+      status: 'pending',
+      estimatedValue: 750,
+      urgency: 'high',
+      createdAt: new Date().toISOString()
+    };
+  });
   const [strategy, setStrategy] = useState<AllocationStrategy>('balanced');
   const [allocationResult, setAllocationResult] = useState<AllocationResult | null>(null);
   const [loading, setLoading] = useState(false);
@@ -58,6 +79,7 @@ export const WorkAllocationPage: React.FC<WorkAllocationPageProps> = ({
     try {
       await workAllocationService.assignJob(currentJob.id, workerId, currentJob.estimatedValue);
       setAssignedWorkerId(workerId);
+      setCurrentJob(prev => ({ ...prev, status: 'assigned' }));
       const worker = allocationResult?.recommendedWorker.worker.name || 'Worker';
       setDispatchSuccessToast(
         `✓ Job successfully assigned to ${worker}! Cooperative earnings (+₹${currentJob.estimatedValue}) and weekly count recorded.`
@@ -125,11 +147,13 @@ export const WorkAllocationPage: React.FC<WorkAllocationPageProps> = ({
                 Active Job Request
               </span>
               <h3 className="font-bold text-slate-900 text-base">{currentJob.title}</h3>
-              {currentJob.id === 'job-demo-01' && (
-                <span className="text-2xs font-bold px-2 py-0.5 rounded bg-emerald-100 text-emerald-800 border border-emerald-300">
-                  Standard Showcase Job
-                </span>
-              )}
+              <span className={`text-2xs font-bold px-2 py-0.5 rounded border capitalize ${
+                assignedWorkerId || currentJob.status === 'assigned'
+                  ? 'bg-emerald-100 text-emerald-800 border-emerald-300'
+                  : 'bg-amber-100 text-amber-800 border-amber-300'
+              }`}>
+                ● {assignedWorkerId || currentJob.status === 'assigned' ? 'Dispatched' : 'Pending Allocation'}
+              </span>
             </div>
 
             <div className="flex items-center space-x-3 text-xs">

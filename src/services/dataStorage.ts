@@ -70,7 +70,7 @@ class DataStorage {
   public addDemandRecord(record: Omit<DemandRecord, 'id'>): DemandRecord {
     const newRecord: DemandRecord = {
       ...record,
-      id: `rec-${Date.now()}-${Math.random().toString(36).substring(2, 7)}`
+      id: `rec-${Date.now()}-${this.demandHistory.length + 1}`
     };
     this.demandHistory = [newRecord, ...this.demandHistory];
     this.saveDemandHistory();

@@ -1,15 +1,179 @@
-import { ForecastSummaryKPIs, DemandForecast, WorkforceRecommendation, DailyForecastPoint, DemandRecord } from '../types';
+import {
+  ForecastSummaryKPIs,
+  DemandForecast,
+  WorkforceRecommendation,
+  DailyForecastPoint,
+  DemandRecord,
+  AdminDemandFilters,
+  CurrentDemandKPIs,
+  DemandTrendMetrics,
+  StatisticalForecastResult,
+  DemandRiskRadarItem,
+  WorkforceReadinessItem,
+  DemandAnomalyItem,
+  ServiceIntelligenceItem,
+  LocationIntelligenceItem,
+  WhatIfScenarioConfig,
+  WhatIfScenarioResult,
+  OperationalRecommendationItem,
+  WorkforceRebalancingOpportunity
+} from '../types';
 import { defaultForecastEngine, ForecastFilterParams } from '../ai/demandForecast/forecastEngine';
+import { defaultStatisticalForecastProvider, IForecastProvider } from './forecasting/forecastProvider';
+import { defaultDemandAnalyticsService } from './demandAnalyticsService';
+import { defaultWorkforcePlanningService } from './workforcePlanningService';
 import { dataStorage } from './dataStorage';
 
 /**
- * Service Layer for Live Demand Forecasting and Operational Data Management
+ * Unified Production-Ready Demand Intelligence & Workforce Planning Service
+ * 
+ * Exposes API-ready methods matching Section 23 specification:
+ * - getDemandAnalytics()
+ * - getDemandTrendAnalysis()
+ * - getDemandForecast()
+ * - getDemandAnomalies()
+ * - getDemandRiskRadar()
+ * - getWorkforceReadiness()
+ * - getServiceIntelligence()
+ * - getLocationIntelligence()
+ * - simulateWhatIfScenario()
+ * - getOperationalRecommendations()
+ * - getWorkforceRebalancingOpportunities()
  */
 class DemandForecastService {
+  private forecastProvider: IForecastProvider = defaultStatisticalForecastProvider;
+
   /**
-   * Fetches dynamic forecast analysis with KPIs, area breakdowns, recommendations and charts
-   * computed from the active live data storage
+   * Sets custom forecast provider (e.g. MLForecastProvider when backend connected)
    */
+  public setForecastProvider(provider: IForecastProvider): void {
+    this.forecastProvider = provider;
+  }
+
+  public getForecastProviderName(): string {
+    return this.forecastProvider.name;
+  }
+
+  public isMLPowered(): boolean {
+    return this.forecastProvider.isMLPowered;
+  }
+
+  /**
+   * 1. Real-time Current Demand Analytics & KPIs
+   */
+  public async getDemandAnalytics(filters?: Partial<AdminDemandFilters>): Promise<CurrentDemandKPIs> {
+    const history = dataStorage.getDemandHistory();
+    const jobs = dataStorage.getJobs();
+    return defaultDemandAnalyticsService.calculateCurrentKPIs(history, jobs, filters);
+  }
+
+  /**
+   * 2. Trend & Time-Slot Analysis
+   */
+  public async getDemandTrendAnalysis(filters?: Partial<AdminDemandFilters>): Promise<DemandTrendMetrics> {
+    const history = dataStorage.getDemandHistory();
+    const jobs = dataStorage.getJobs();
+    return defaultDemandAnalyticsService.calculateTrendMetrics(history, jobs, filters);
+  }
+
+  /**
+   * 3. Statistical / Model Forecasting Layer
+   */
+  public async getDemandForecast(filters: AdminDemandFilters): Promise<StatisticalForecastResult[]> {
+    const history = dataStorage.getDemandHistory();
+    const workers = dataStorage.getWorkers();
+    return this.forecastProvider.generateForecast(filters, history, workers);
+  }
+
+  /**
+   * 4. Demand Anomaly Detection
+   */
+  public async getDemandAnomalies(filters?: Partial<AdminDemandFilters>): Promise<DemandAnomalyItem[]> {
+    const history = dataStorage.getDemandHistory();
+    return defaultDemandAnalyticsService.detectDemandAnomalies(history, filters);
+  }
+
+  /**
+   * 5. Demand Risk Radar
+   */
+  public async getDemandRiskRadar(
+    filters: AdminDemandFilters,
+    providedForecasts?: StatisticalForecastResult[]
+  ): Promise<DemandRiskRadarItem[]> {
+    const forecasts = providedForecasts || await this.getDemandForecast(filters);
+    const workers = dataStorage.getWorkers();
+    return defaultWorkforcePlanningService.calculateDemandRiskRadar(forecasts, workers);
+  }
+
+  /**
+   * 6. Workforce Readiness (Expected Demand vs Capacity)
+   */
+  public async getWorkforceReadiness(
+    riskRadar: DemandRiskRadarItem[]
+  ): Promise<WorkforceReadinessItem[]> {
+    return defaultWorkforcePlanningService.calculateWorkforceReadiness(riskRadar);
+  }
+
+  /**
+   * 7. Service Intelligence (Ranked by growth, demand, response times)
+   */
+  public async getServiceIntelligence(): Promise<ServiceIntelligenceItem[]> {
+    const history = dataStorage.getDemandHistory();
+    const jobs = dataStorage.getJobs();
+    return defaultDemandAnalyticsService.calculateServiceIntelligence(history, jobs);
+  }
+
+  /**
+   * 8. Location Intelligence (Ranked by volume, risk, and worker deficit)
+   */
+  public async getLocationIntelligence(): Promise<LocationIntelligenceItem[]> {
+    const history = dataStorage.getDemandHistory();
+    const jobs = dataStorage.getJobs();
+    const workers = dataStorage.getWorkers();
+
+    const workerCountsByArea = new Map<string, number>();
+    workers.forEach(w => {
+      if (w.availability !== 'unavailable' && !w.suspended) {
+        const areaKey = w.serviceArea.split(' - ')[0];
+        workerCountsByArea.set(areaKey, (workerCountsByArea.get(areaKey) || 0) + 1);
+        workerCountsByArea.set(w.serviceArea, (workerCountsByArea.get(w.serviceArea) || 0) + 1);
+      }
+    });
+
+    return defaultDemandAnalyticsService.calculateLocationIntelligence(history, jobs, workerCountsByArea);
+  }
+
+  /**
+   * 9. What-If Scenario Simulator
+   */
+  public async simulateWhatIfScenario(
+    config: WhatIfScenarioConfig,
+    baseRisks: DemandRiskRadarItem[]
+  ): Promise<WhatIfScenarioResult> {
+    return defaultWorkforcePlanningService.simulateScenario(config, baseRisks);
+  }
+
+  /**
+   * 10. Operations Action Center Recommendations
+   */
+  public async getOperationalRecommendations(
+    risks: DemandRiskRadarItem[],
+    readiness: WorkforceReadinessItem[]
+  ): Promise<OperationalRecommendationItem[]> {
+    return defaultWorkforcePlanningService.generateOperationalRecommendations(risks, readiness);
+  }
+
+  /**
+   * 11. Inter-Zone Workforce Rebalancing Opportunities
+   */
+  public async getWorkforceRebalancingOpportunities(
+    readiness: WorkforceReadinessItem[]
+  ): Promise<WorkforceRebalancingOpportunity[]> {
+    const workers = dataStorage.getWorkers();
+    return defaultWorkforcePlanningService.calculateRebalancingOpportunities(workers, readiness);
+  }
+
+  // --- Legacy Backward Compatibility Methods ---
   public async getForecastData(params: ForecastFilterParams = { horizonDays: 7 }): Promise<{
     kpis: ForecastSummaryKPIs;
     areaForecasts: DemandForecast[];
@@ -18,67 +182,58 @@ class DemandForecastService {
   }> {
     const history = dataStorage.getDemandHistory();
     const workers = dataStorage.getWorkers();
-
-    // Async micro-tick for realistic feel
-    await new Promise(resolve => setTimeout(resolve, 80));
     return defaultForecastEngine.generateForecast(params, history, workers);
   }
 
-  /**
-   * Fetches specific high demand zones
-   */
   public async getHighDemandAreas(horizonDays: 7 | 14 | 30 = 7): Promise<DemandForecast[]> {
     const data = await this.getForecastData({ horizonDays });
     return data.areaForecasts;
   }
 
-  /**
-   * Fetches workforce preparation recommendations
-   */
   public async getWorkforceRecommendations(): Promise<WorkforceRecommendation[]> {
     const data = await this.getForecastData();
     return data.recommendations;
   }
 
-  /**
-   * Returns current live demand history records
-   */
   public getDemandHistory(): DemandRecord[] {
     return dataStorage.getDemandHistory();
   }
 
-  /**
-   * Adds a new real demand record
-   */
   public addDemandRecord(record: Omit<DemandRecord, 'id'>): DemandRecord {
     return dataStorage.addDemandRecord(record);
   }
 
-  /**
-   * Deletes a demand record by ID
-   */
   public deleteDemandRecord(id: string): void {
     dataStorage.deleteDemandRecord(id);
   }
 
-  /**
-   * Clears all demand records (start clean)
-   */
   public clearAllDemandRecords(): void {
     dataStorage.clearDemandHistory();
   }
 
-  /**
-   * Resets demand records to baseline cooperative seed
-   */
   public resetToBaseline(): void {
     dataStorage.resetDemandHistoryToBaseline();
   }
 
-  /**
-   * Imports demand records from CSV format
-   * Header: date,dayOfWeek,service,location,requests,completed,cancelled,avgResponseTimeMinutes,weatherCondition
-   */
+  public exportToCSV(): string {
+    const history = this.getDemandHistory();
+    const headers = ['date', 'dayOfWeek', 'service', 'location', 'timeSlot', 'requests', 'completed', 'cancelled', 'avgResponseTimeMinutes', 'isHolidayOrWeekend', 'weatherCondition'];
+    const rows = history.map(r => [
+      r.date,
+      r.dayOfWeek || 'Mon',
+      `"${r.service}"`,
+      `"${r.location}"`,
+      r.timeSlot || 'morning',
+      r.requests,
+      r.completed,
+      r.cancelled,
+      r.avgResponseTimeMinutes || 25,
+      r.isHolidayOrWeekend ? 'true' : 'false',
+      `"${r.weatherCondition || 'Clear'}"`
+    ].join(','));
+    return [headers.join(','), ...rows].join('\n');
+  }
+
   public importFromCSV(csvContent: string): { imported: number; errors: string[] } {
     const lines = csvContent.trim().split(/\r?\n/);
     if (lines.length < 2) {
@@ -140,7 +295,7 @@ class DemandForecastService {
       const isHolidayOrWeekend = dayOfWeek === 'Sat' || dayOfWeek === 'Sun';
 
       newRecords.push({
-        id: `rec-csv-${Date.now()}-${i}`,
+        id: `csv-${Date.now()}-${i}`,
         date,
         dayOfWeek,
         service,
@@ -159,27 +314,6 @@ class DemandForecastService {
     }
 
     return { imported: newRecords.length, errors };
-  }
-
-  /**
-   * Exports all live demand records to CSV string
-   */
-  public exportToCSV(): string {
-    const records = dataStorage.getDemandHistory();
-    const headers = ['date', 'dayOfWeek', 'service', 'location', 'requests', 'completed', 'cancelled', 'avgResponseTimeMinutes', 'weatherCondition'];
-    const rows = records.map(r => [
-      r.date,
-      r.dayOfWeek,
-      `"${r.service}"`,
-      `"${r.location}"`,
-      r.requests,
-      r.completed,
-      r.cancelled,
-      r.avgResponseTimeMinutes,
-      `"${r.weatherCondition || 'Clear'}"`
-    ].join(','));
-
-    return [headers.join(','), ...rows].join('\n');
   }
 }
 

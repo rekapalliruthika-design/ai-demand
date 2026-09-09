@@ -6,7 +6,6 @@ import { DemandForecastPage } from './pages/DemandForecastPage';
 import { WorkAllocationPage } from './pages/WorkAllocationPage';
 import { FairnessAnalyticsPage } from './pages/FairnessAnalyticsPage';
 import { WorkerDirectoryPage } from './pages/WorkerDirectoryPage';
-import { INITIAL_JOBS } from './data/jobData';
 import { workAllocationService } from './services/workAllocationService';
 import { demandForecastService } from './services/demandForecastService';
 import { Scale, ShieldCheck, HeartHandshake, Award } from 'lucide-react';
@@ -93,12 +92,12 @@ export default function App() {
             onAlertsCalculated={(count, alerts) => {
               setUrgentAlertCount(count);
               setUrgentAlerts(
-                alerts.map(a => ({
+                alerts.map((a: any) => ({
                   location: a.location,
                   service: a.service,
-                  predictedJobs: a.predictedJobs,
-                  demandLevel: a.demandLevel,
-                  shortage: Math.max(1, a.shortageOrSurplus)
+                  predictedJobs: a.expectedJobs ?? a.predictedJobs ?? 0,
+                  demandLevel: a.riskLevel ?? a.demandLevel ?? 'High',
+                  shortage: Math.max(1, Math.abs(a.capacityGap ?? a.shortageOrSurplus ?? 1))
                 }))
               );
             }}
@@ -106,7 +105,7 @@ export default function App() {
         )}
 
         {activeTab === 'work-allocation' && (
-          <WorkAllocationPage initialJob={INITIAL_JOBS[0]} />
+          <WorkAllocationPage />
         )}
 
         {activeTab === 'fairness-analytics' && (

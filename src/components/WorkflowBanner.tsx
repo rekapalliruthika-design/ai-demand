@@ -18,8 +18,8 @@ export const WorkflowBanner: React.FC<WorkflowBannerProps> = ({
     {
       id: 'demand-forecast' as const,
       number: '1',
-      title: 'Demand Forecast',
-      subtitle: 'Predict service surges & worker shortages',
+      title: 'Demand Intelligence',
+      subtitle: 'Surge forecast & workforce planning',
       icon: TrendingUp
     },
     {

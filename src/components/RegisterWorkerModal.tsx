@@ -58,9 +58,10 @@ export const RegisterWorkerModal: React.FC<RegisterWorkerModalProps> = ({
     }
 
     const areaMatch = COOPERATIVE_AREAS.find(a => a.name === serviceArea) || COOPERATIVE_AREAS[0];
-    // Slightly jitter coordinates from hub center to emulate real addresses
-    const latitude = areaMatch.lat + (Math.random() - 0.5) * 0.015;
-    const longitude = areaMatch.lng + (Math.random() - 0.5) * 0.015;
+    // Deterministic hub offset based on worker name character codes
+    const charSum = name.split('').reduce((sum, char) => sum + char.charCodeAt(0), 0);
+    const latitude = areaMatch.lat + (((charSum % 100) - 50) / 100) * 0.012;
+    const longitude = areaMatch.lng + ((((charSum * 7) % 100) - 50) / 100) * 0.012;
 
     await workAllocationService.addWorker({
       name: name.trim(),
