@@ -1,9 +1,9 @@
 import { Job } from '../types';
 
 export const INITIAL_JOBS: Job[] = [
-  // Primary SIH Demo Scenario Job
+  // Primary Scenario Active Job
   {
-    id: 'job-demo-01',
+    id: 'job-scenario-01',
     title: 'Emergency Main Pipe Burst & Valve Rupture',
     service: 'Plumbing',
     category: 'Plumbing & Water Systems',

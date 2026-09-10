@@ -47,7 +47,7 @@ export const DemandScenarioSimulatorSection: React.FC<DemandScenarioSimulatorSec
             </h3>
           </div>
           <p className="text-xs text-slate-500 mt-0.5">
-            Test hypothetical surge or drop conditions without modifying live bookings or active member rosters
+            Test hypothetical surge or drop conditions without modifying live bookings or active worker rosters
           </p>
         </div>
 

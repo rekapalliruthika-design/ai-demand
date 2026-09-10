@@ -56,7 +56,7 @@ export class WorkforcePlanningService {
         riskNotes = `Severe deficit: ${Math.abs(capacityGap)} workers missing. Demand exceeds capacity by ${Math.round((workersRequired / Math.max(1, availableCapacity)) * 100)}%. High SLA breach risk.`;
       } else if (capacityGap === -1 || (availableCapacity > 0 && workersRequired > availableCapacity)) {
         riskLevel = 'High';
-        riskNotes = `Projected deficit of 1 worker. Standby cooperative members should be alerted.`;
+        riskNotes = `Projected deficit of 1 worker. Standby cooperative workers should be alerted.`;
       } else if (workersRequired >= availableCapacity * 0.85) {
         riskLevel = 'Moderate';
         riskNotes = `Tight capacity: ${availableCapacity} workers operating near 90%+ utilization threshold.`;
@@ -102,7 +102,7 @@ export class WorkforcePlanningService {
 
       if (capacityPercentage < 65 || r.capacityGap <= -2) {
         readinessStatus = 'Critical Shortage';
-        actionSuggestion = `Mobilize ${Math.abs(r.capacityGap)} standby cooperative members or request adjacent zone rebalancing immediately.`;
+        actionSuggestion = `Mobilize ${Math.abs(r.capacityGap)} standby cooperative workers or request adjacent zone rebalancing immediately.`;
       } else if (capacityPercentage < 95 || r.capacityGap < 0) {
         readinessStatus = 'Shortage';
         actionSuggestion = `Activate 1 cooperative worker from flex-shift pool to safeguard 30-min response times.`;
@@ -252,7 +252,7 @@ export class WorkforcePlanningService {
         id: `rec-high-${idx}`,
         type: 'shortage',
         title: `Workforce Augmentation: ${r.service} in ${r.location.split(' - ')[0]}`,
-        description: `Cooperative capacity is currently 1 worker short for anticipated request volume (${r.expectedJobs} requests). Preemptively notify flex-shift members.`,
+        description: `Cooperative capacity is currently 1 worker short for anticipated request volume (${r.expectedJobs} requests). Preemptively notify flex-shift workers.`,
         impact: 'Medium',
         service: r.service,
         location: r.location,
@@ -387,7 +387,7 @@ export class WorkforcePlanningService {
             recommendedTransferCount: recommendedTransfer,
             distanceKm,
             eligibleWorkers: eligible.slice(0, recommendedTransfer),
-            reasoning: `${surplusItem.location.split(' - ')[0]} has a surplus of ${surplusItem.surplus} ${service.toLowerCase()} workers, while ${shortageItem.location.split(' - ')[0]} faces a deficit of ${shortageItem.shortage} workers (~${distanceKm} km transit). Voluntary temporary rebalancing optimizes member earnings and meets consumer SLAs.`
+            reasoning: `${surplusItem.location.split(' - ')[0]} has a surplus of ${surplusItem.surplus} ${service.toLowerCase()} workers, while ${shortageItem.location.split(' - ')[0]} faces a deficit of ${shortageItem.shortage} workers (~${distanceKm} km transit). Voluntary temporary rebalancing optimizes worker earnings and meets consumer SLAs.`
           });
         });
       });

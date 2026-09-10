@@ -1,7 +1,7 @@
 import React from 'react';
 import { ArrowRight, ArrowLeft, X } from 'lucide-react';
 
-interface SIHDemoWalkthroughProps {
+interface PlatformTourGuideProps {
   isOpen: boolean;
   onClose: () => void;
   currentStep: number;
@@ -9,7 +9,7 @@ interface SIHDemoWalkthroughProps {
   onNavigateTab: (tab: 'demand-forecast' | 'work-allocation' | 'fairness-analytics' | 'workers') => void;
 }
 
-export const SIHDemoWalkthrough: React.FC<SIHDemoWalkthroughProps> = ({
+export const PlatformTourGuide: React.FC<PlatformTourGuideProps> = ({
   isOpen,
   onClose,
   currentStep,
@@ -24,12 +24,12 @@ export const SIHDemoWalkthrough: React.FC<SIHDemoWalkthroughProps> = ({
       title: 'Step 1: AI Demand Forecast & Shortage Detection',
       tab: 'demand-forecast' as const,
       description:
-        'Observe the projected +24% plumbing surge in Area A (Indiranagar). Note the "Workforce Preparation Recommendation" showing a shortage of 2 certified plumbers.',
+        'Observe the projected +24% plumbing surge in Area A (Indiranagar). Note the "Workforce Preparation Recommendation" showing a shortage of certified trade workers.',
       highlight: 'Check the 5 KPI Cards and High Demand Areas table.'
     },
     {
       step: 2,
-      title: 'Step 2: AI Autonomous Intelligence & Insights',
+      title: 'Step 2: Autonomous Platform Intelligence & Insights',
       tab: 'demand-forecast' as const,
       description:
         'Inspect the "Cooperative AI Intelligence" panel. Notice the "Opportunity Distribution Imbalance Detected" insight showing workers with fewer jobs than the cohort average.',
@@ -37,7 +37,7 @@ export const SIHDemoWalkthrough: React.FC<SIHDemoWalkthroughProps> = ({
     },
     {
       step: 3,
-      title: 'Step 3: Booking Request Trigger (Area A Plumbing)',
+      title: 'Step 3: Service Request Trigger (Area A Plumbing)',
       tab: 'work-allocation' as const,
       description:
         'A customer books an "Emergency Main Pipe Burst & Valve Rupture" in Area A (Indiranagar). The Fair Work Allocation Engine runs in real-time.',
@@ -117,6 +117,7 @@ export const SIHDemoWalkthrough: React.FC<SIHDemoWalkthroughProps> = ({
             onClick={handlePrev}
             disabled={currentStep === 1}
             className="p-1.5 rounded bg-slate-800 hover:bg-slate-700 disabled:opacity-30 disabled:pointer-events-none text-slate-300 text-xs cursor-pointer"
+            aria-label="Previous step"
           >
             <ArrowLeft className="w-4 h-4" />
           </button>
@@ -131,8 +132,9 @@ export const SIHDemoWalkthrough: React.FC<SIHDemoWalkthroughProps> = ({
 
           <button
             onClick={onClose}
-            className="p-1.5 rounded text-slate-400 hover:text-white hover:bg-slate-800 transition-colors ml-1"
+            className="p-1.5 rounded text-slate-400 hover:text-white hover:bg-slate-800 transition-colors ml-1 cursor-pointer"
             title="Dismiss walkthrough banner"
+            aria-label="Close tour"
           >
             <X className="w-4 h-4" />
           </button>

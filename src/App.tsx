@@ -1,7 +1,7 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { Navbar } from './components/Navbar';
 import { WorkflowBanner } from './components/WorkflowBanner';
-import { SIHDemoWalkthrough } from './components/SIHDemoWalkthrough';
+import { PlatformTourGuide } from './components/PlatformTourGuide';
 import { DemandForecastPage } from './pages/DemandForecastPage';
 import { WorkAllocationPage } from './pages/WorkAllocationPage';
 import { FairnessAnalyticsPage } from './pages/FairnessAnalyticsPage';
@@ -22,8 +22,8 @@ interface UrgentAlertSummary {
 
 export default function App() {
   const [activeTab, setActiveTab] = useState<TabType>('demand-forecast');
-  const [demoActive, setDemoActive] = useState(false);
-  const [demoStep, setDemoStep] = useState(1);
+  const [tourActive, setTourActive] = useState(false);
+  const [tourStep, setTourStep] = useState(1);
   const [urgentAlertCount, setUrgentAlertCount] = useState<number>(5);
   const [urgentAlerts, setUrgentAlerts] = useState<UrgentAlertSummary[]>([]);
 
@@ -43,15 +43,28 @@ export default function App() {
     }).catch(err => console.error('Failed to preload forecast alerts', err));
   }, []);
 
-  const handleOpenGuide = () => {
-    setDemoActive(true);
-    setDemoStep(1);
-  };
+  const handleOpenGuide = useCallback(() => {
+    setTourActive(true);
+    setTourStep(1);
+  }, []);
 
-  const handleResetData = () => {
+  const handleResetData = useCallback(() => {
     workAllocationService.resetData();
     window.location.reload();
-  };
+  }, []);
+
+  const handleAlertsCalculated = useCallback((count: number, alerts: any[]) => {
+    setUrgentAlertCount(count);
+    setUrgentAlerts(
+      alerts.map((a: any) => ({
+        location: a.location,
+        service: a.service,
+        predictedJobs: a.expectedJobs ?? a.predictedJobs ?? 0,
+        demandLevel: a.riskLevel ?? a.demandLevel ?? 'High',
+        shortage: Math.max(1, Math.abs(a.capacityGap ?? a.shortageOrSurplus ?? 1))
+      }))
+    );
+  }, []);
 
   return (
     <div className="min-h-screen bg-slate-100/70 text-slate-900 flex flex-col font-sans">
@@ -61,18 +74,18 @@ export default function App() {
         setActiveTab={setActiveTab}
         onOpenGuide={handleOpenGuide}
         onResetData={handleResetData}
-        guideActive={demoActive}
+        guideActive={tourActive}
         urgentAlertCount={urgentAlertCount}
         urgentAlerts={urgentAlerts}
       />
 
-      {/* Guided Walkthrough Banner (when active) */}
-      {demoActive && (
-        <SIHDemoWalkthrough
-          isOpen={demoActive}
-          onClose={() => setDemoActive(false)}
-          currentStep={demoStep}
-          setStep={setDemoStep}
+      {/* Interactive Platform Tour Guide (when active) */}
+      {tourActive && (
+        <PlatformTourGuide
+          isOpen={tourActive}
+          onClose={() => setTourActive(false)}
+          currentStep={tourStep}
+          setStep={setTourStep}
           onNavigateTab={tab => setActiveTab(tab)}
         />
       )}
@@ -89,18 +102,7 @@ export default function App() {
         {activeTab === 'demand-forecast' && (
           <DemandForecastPage
             onNavigateToDispatch={() => setActiveTab('work-allocation')}
-            onAlertsCalculated={(count, alerts) => {
-              setUrgentAlertCount(count);
-              setUrgentAlerts(
-                alerts.map((a: any) => ({
-                  location: a.location,
-                  service: a.service,
-                  predictedJobs: a.expectedJobs ?? a.predictedJobs ?? 0,
-                  demandLevel: a.riskLevel ?? a.demandLevel ?? 'High',
-                  shortage: Math.max(1, Math.abs(a.capacityGap ?? a.shortageOrSurplus ?? 1))
-                }))
-              );
-            }}
+            onAlertsCalculated={handleAlertsCalculated}
           />
         )}
 

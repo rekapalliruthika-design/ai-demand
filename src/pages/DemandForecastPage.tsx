@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useMemo, useCallback } from 'react';
+import React, { useState, useEffect, useMemo, useCallback, useRef } from 'react';
 import { demandForecastService } from '../services/demandForecastService';
 import { dataStorage } from '../services/dataStorage';
 import {
@@ -94,6 +94,12 @@ export const DemandForecastPage: React.FC<DemandForecastPageProps> = ({
   const [locationIntel, setLocationIntel] = useState<LocationIntelligenceItem[]>([]);
   const [rebalancingOpps, setRebalancingOpps] = useState<WorkforceRebalancingOpportunity[]>([]);
 
+  // Keep onAlertsCalculated in a ref so changes to parent callback identity never re-trigger loadIntelligence
+  const alertsCallbackRef = useRef(onAlertsCalculated);
+  useEffect(() => {
+    alertsCallbackRef.current = onAlertsCalculated;
+  }, [onAlertsCalculated]);
+
   // Load all intelligence modules from live platform data
   const loadIntelligence = useCallback(async () => {
     setLoading(true);
@@ -148,13 +154,13 @@ export const DemandForecastPage: React.FC<DemandForecastPageProps> = ({
 
       // Report urgent alerts count
       const urgentRisks = risks.filter(r => r.riskLevel === 'Critical' || r.riskLevel === 'High');
-      onAlertsCalculated?.(urgentRisks.length, urgentRisks);
+      alertsCallbackRef.current?.(urgentRisks.length, urgentRisks);
     } catch (err) {
       console.error('Failed to calculate demand intelligence:', err);
     } finally {
       setLoading(false);
     }
-  }, [horizonDays, selectedService, selectedLocation, onAlertsCalculated]);
+  }, [horizonDays, selectedService, selectedLocation]);
 
   useEffect(() => {
     loadIntelligence();
@@ -218,15 +224,6 @@ export const DemandForecastPage: React.FC<DemandForecastPageProps> = ({
 
           {/* Quick Action Buttons */}
           <div className="flex flex-wrap items-center gap-2 self-start lg:self-auto">
-            <button
-              onClick={() => setIsManageDataOpen(true)}
-              className="inline-flex items-center space-x-1.5 text-xs font-bold text-slate-700 bg-slate-100 hover:bg-slate-200 px-3.5 py-2 rounded-xl border border-slate-300 transition-colors cursor-pointer"
-              title="Manage live demand dataset, import CSV, or log new service requests"
-            >
-              <Database className="w-3.5 h-3.5 text-emerald-700" />
-              <span>Live Dataset ({demandHistoryCount} logs)</span>
-            </button>
-
             {onNavigateToDispatch && (
               <button
                 onClick={onNavigateToDispatch}

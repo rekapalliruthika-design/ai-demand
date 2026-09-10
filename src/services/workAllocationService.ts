@@ -35,6 +35,13 @@ class WorkAllocationService {
   }
 
   /**
+   * Clears all workers
+   */
+  public async clearWorkers(): Promise<void> {
+    dataStorage.clearWorkers();
+  }
+
+  /**
    * Returns all pending and allocated jobs
    */
   public async getJobs(): Promise<Job[]> {

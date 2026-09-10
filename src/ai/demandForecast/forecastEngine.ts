@@ -15,7 +15,7 @@ export interface ForecastFilterParams {
  * - Seasonality & weekend surges based on actual service categories
  * - Micro-geographic demand scaling based on cooperative service zones
  * - Real-time workforce deficit calculation matching against live registered workers
- * - Zero hardcoded demo overrides
+ * - Zero hardcoded overrides
  */
 export class ForecastEngine {
   /**
@@ -328,7 +328,7 @@ export class ForecastEngine {
         currentWorkforce: f.currentWorkforce,
         requiredWorkforce: f.recommendedWorkforce,
         shortageOrSurplus: f.shortageOrSurplus,
-        recommendedAction: `Projected demand of ${f.predictedJobs} requests in ${f.location} requires ${f.recommendedWorkforce} workers (currently ${f.currentWorkforce} active). Deploy ${f.shortageOrSurplus} standby cooperative trade members.`,
+        recommendedAction: `Projected demand of ${f.predictedJobs} requests in ${f.location} requires ${f.recommendedWorkforce} workers (currently ${f.currentWorkforce} active). Deploy ${f.shortageOrSurplus} standby cooperative trade professionals.`,
         urgency,
         affectedCoopZone: f.location.split(' - ')[0]
       });

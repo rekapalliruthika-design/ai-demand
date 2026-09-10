@@ -16,6 +16,7 @@ export const RegisterWorkerModal: React.FC<RegisterWorkerModalProps> = ({
   onWorkerAdded
 }) => {
   const [name, setName] = useState('');
+  const [avatar, setAvatar] = useState('');
   const [phone, setPhone] = useState('+91 ');
   const [serviceArea, setServiceArea] = useState(COOPERATIVE_AREAS[0].name);
   const [selectedSkills, setSelectedSkills] = useState<string[]>([SERVICE_CATEGORIES[0]]);
@@ -65,6 +66,7 @@ export const RegisterWorkerModal: React.FC<RegisterWorkerModalProps> = ({
 
     await workAllocationService.addWorker({
       name: name.trim(),
+      avatar: avatar.trim() || undefined,
       phone: phone.trim() || '+91 98000 00000',
       serviceArea,
       skills: selectedSkills,
@@ -134,6 +136,17 @@ export const RegisterWorkerModal: React.FC<RegisterWorkerModalProps> = ({
               placeholder="e.g. Ramesh Chandra"
               value={name}
               onChange={e => setName(e.target.value)}
+              className="w-full text-xs px-3 py-2 rounded-lg border border-slate-300 focus:outline-hidden focus:ring-2 focus:ring-emerald-500"
+            />
+          </div>
+
+          <div>
+            <label className="text-xs font-semibold text-slate-700 block mb-1">Profile Photo / Avatar Image URL (Optional)</label>
+            <input
+              type="url"
+              placeholder="https://images.unsplash.com/... or leave blank for auto initials"
+              value={avatar}
+              onChange={e => setAvatar(e.target.value)}
               className="w-full text-xs px-3 py-2 rounded-lg border border-slate-300 focus:outline-hidden focus:ring-2 focus:ring-emerald-500"
             />
           </div>

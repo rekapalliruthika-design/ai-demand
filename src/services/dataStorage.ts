@@ -4,7 +4,7 @@ import { MOCK_WORKERS } from '../data/workerData';
 import { INITIAL_JOBS } from '../data/jobData';
 
 const STORAGE_KEY_DEMAND = 'sahakargig_demand_history_v1';
-const STORAGE_KEY_WORKERS = 'sahakargig_workers_v1';
+const STORAGE_KEY_WORKERS = 'sahakargig_workers_v2';
 const STORAGE_KEY_JOBS = 'sahakargig_jobs_v1';
 
 class DataStorage {
@@ -21,6 +21,9 @@ class DataStorage {
     if (typeof window === 'undefined') return;
 
     try {
+      // Clear legacy storage containing hardcoded mock members
+      localStorage.removeItem('sahakargig_workers_v1');
+
       const storedDemand = localStorage.getItem(STORAGE_KEY_DEMAND);
       if (storedDemand) {
         this.demandHistory = JSON.parse(storedDemand);
@@ -33,7 +36,8 @@ class DataStorage {
       if (storedWorkers) {
         this.workers = JSON.parse(storedWorkers);
       } else {
-        this.workers = [...MOCK_WORKERS];
+        // Start empty: no preloaded fake workers/members
+        this.workers = [];
         this.saveWorkers();
       }
 
@@ -49,7 +53,7 @@ class DataStorage {
     } catch (e) {
       console.warn('LocalStorage not accessible, using in-memory state', e);
       this.demandHistory = [...MOCK_DEMAND_HISTORY];
-      this.workers = [...MOCK_WORKERS];
+      this.workers = [];
       this.jobs = [...INITIAL_JOBS];
     }
   }
@@ -150,7 +154,7 @@ class DataStorage {
   }
 
   public resetWorkersToBaseline(): void {
-    this.workers = [...MOCK_WORKERS];
+    this.workers = [];
     this.saveWorkers();
   }
 

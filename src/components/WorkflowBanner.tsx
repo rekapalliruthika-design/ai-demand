@@ -40,7 +40,7 @@ export const WorkflowBanner: React.FC<WorkflowBannerProps> = ({
       id: 'workers' as const,
       number: '4',
       title: 'Worker Directory',
-      subtitle: '22 verified cooperative trade pros',
+      subtitle: 'Verified trade professionals & dispatch',
       icon: Briefcase
     }
   ];
@@ -172,7 +172,7 @@ export const WorkflowBanner: React.FC<WorkflowBannerProps> = ({
                   <h4 className="text-xs font-bold text-slate-900">Equitable Cooperative Livelihoods</h4>
                 </div>
                 <p className="text-2xs text-slate-600 leading-relaxed">
-                  The system tracks the Opportunity Gini Coefficient (0.22 vs 0.68 industry baseline). All 22 verified cooperative members get steady access to jobs, preventing worker burnout while protecting economic security.
+                  The system tracks the Opportunity Gini Coefficient against commercial industry baselines. All registered cooperative workers get steady access to jobs, preventing worker burnout while protecting economic security.
                 </p>
                 <div className="mt-2 text-3xs font-semibold text-purple-700 flex items-center space-x-1">
                   <CheckCircle2 className="w-3 h-3" />

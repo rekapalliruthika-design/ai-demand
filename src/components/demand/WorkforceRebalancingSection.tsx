@@ -101,23 +101,27 @@ export const WorkforceRebalancingSection: React.FC<WorkforceRebalancingSectionPr
                   {/* Eligible Workers Available */}
                   <div className="space-y-1.5">
                     <span className="text-3xs font-bold uppercase text-slate-600 block">
-                      Recommended Standby Members (Lowest Weekly Jobs):
+                      Recommended Standby Workers (Lowest Weekly Jobs):
                     </span>
-                    <div className="flex flex-wrap gap-1.5">
-                      {opp.eligibleWorkers.map(w => (
-                        <div
-                          key={w.id}
-                          className="flex items-center space-x-1.5 px-2 py-1 rounded-md bg-slate-100 border border-slate-200 text-2xs text-slate-800 font-medium"
-                        >
-                          <span>{w.name}</span>
-                          <span className="text-amber-700 flex items-center">
-                            <Star className="w-2.5 h-2.5 fill-amber-500 text-amber-500 mr-0.5" />
-                            {w.rating}
-                          </span>
-                          <span className="text-slate-600">({w.weeklyJobs} jobs/wk)</span>
-                        </div>
-                      ))}
-                    </div>
+                    {opp.eligibleWorkers.length > 0 ? (
+                      <div className="flex flex-wrap gap-1.5">
+                        {opp.eligibleWorkers.map(w => (
+                          <div
+                            key={w.id}
+                            className="flex items-center space-x-1.5 px-2 py-1 rounded-md bg-slate-100 border border-slate-200 text-2xs text-slate-800 font-medium"
+                          >
+                            <span>{w.name}</span>
+                            <span className="text-amber-700 flex items-center">
+                              <Star className="w-2.5 h-2.5 fill-amber-500 text-amber-500 mr-0.5" />
+                              {w.rating}
+                            </span>
+                            <span className="text-slate-600">({w.weeklyJobs} jobs/wk)</span>
+                          </div>
+                        ))}
+                      </div>
+                    ) : (
+                      <p className="text-2xs text-slate-500 italic">No standby workers currently available.</p>
+                    )}
                   </div>
                 </div>
 

@@ -218,7 +218,7 @@ export const FairnessMetrics: React.FC<FairnessMetricsProps> = ({ stats }) => {
           </div>
         </div>
 
-        {/* Explanatory Footer & SIH Pitch Points */}
+        {/* Explanatory Footer & Cooperative Fairness Standards */}
         <div className="mt-6 pt-4 border-t border-slate-100 bg-slate-50 -mx-5 -mb-5 p-4 rounded-b-xl flex items-start space-x-2.5 text-xs text-slate-600">
           <Info className="w-4 h-4 text-emerald-600 shrink-0 mt-0.5" />
           <div className="space-y-1">

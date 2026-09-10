@@ -1,7 +1,7 @@
 import { Worker } from '../types';
 
 export const MOCK_WORKERS: Worker[] = [
-  // 1. Plumbing Specialist - Demo Scenario (Balanced / Fair Winner)
+  // 1. Plumbing Specialist (Balanced / Fair Opportunity Winner)
   {
     id: 'worker-plumb-01',
     name: 'Ravi Kumar',

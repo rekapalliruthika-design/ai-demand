@@ -49,8 +49,22 @@ export const WorkerAllocationCard: React.FC<WorkerAllocationCardProps> = ({
         {/* Worker Profile Header */}
         <div className="flex flex-col sm:flex-row sm:items-center justify-between pb-4 mb-4 border-b border-slate-100 gap-3">
           <div className="flex items-start space-x-3.5">
-            <div className="w-13 h-13 rounded-full bg-slate-100 border border-slate-300 flex items-center justify-center text-slate-700 font-bold text-xl shrink-0">
-              {worker.name.split(' ').map(n => n[0]).join('')}
+            <div className="w-13 h-13 rounded-full bg-slate-100 border border-slate-300 flex items-center justify-center text-slate-700 font-bold text-xl shrink-0 overflow-hidden">
+              {worker.avatar ? (
+                <img
+                  src={worker.avatar}
+                  alt={worker.name}
+                  loading="lazy"
+                  decoding="async"
+                  onError={e => {
+                    // Fallback to initials if broken
+                    (e.currentTarget as HTMLElement).style.display = 'none';
+                  }}
+                  className="w-full h-full object-cover"
+                />
+              ) : (
+                <span>{worker.name.split(' ').map(n => n[0]).join('')}</span>
+              )}
             </div>
             <div>
               <div className="flex items-center space-x-2">
@@ -64,7 +78,7 @@ export const WorkerAllocationCard: React.FC<WorkerAllocationCardProps> = ({
                 {(worker.skills || []).slice(0, 3).join(' • ')}
               </p>
               <p className="text-xs text-slate-400 mt-0.5">
-                {worker.serviceArea} • Member since {worker.joinedDate.split('-')[0]}
+                {worker.serviceArea} • Registered since {worker.joinedDate.split('-')[0]}
               </p>
             </div>
           </div>
@@ -152,7 +166,7 @@ export const WorkerAllocationCard: React.FC<WorkerAllocationCardProps> = ({
           </div>
         </div>
 
-        {/* Why This Worker Explanation Section (Crucial SIH Requirement) */}
+        {/* Why This Worker Explanation Section (Cooperative Explainability Standard) */}
         <div className="bg-emerald-50/60 rounded-xl p-4 border border-emerald-200/80 mb-4">
           <div className="flex items-center justify-between mb-2">
             <h5 className="font-bold text-emerald-950 text-sm flex items-center space-x-1.5">
